@@ -1,0 +1,34 @@
+[user]
+	email = casey.tomlin@bayer.com
+	name = caseytomlin
+[pull]
+	rebase = true
+	ff = only
+[fetch]
+	prune = true
+[rebase]
+	autoStash = true
+[rerere]
+	enabled = 1
+[color "branch"]
+	current = yellow reverse
+	local = yellow
+	remote = green
+[color "diff"]
+	frag = magenta bold
+	meta = yellow bold
+	new = green bold
+	old = red bold
+	whitespace = red reverse
+[color "status"]
+	added = yellow
+	changed = green
+	untracked = cyan
+[help]
+	autoCorrect = immediate
+[init]
+	defaultBranch = main
+[core]
+	autocrlf = input
+[credential]
+	helper = manager

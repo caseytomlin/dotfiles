@@ -1,0 +1,5 @@
+[status]
+disabled = false
+
+[character]
+format = "🍕 $symbol "
