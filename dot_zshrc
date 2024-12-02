@@ -118,3 +118,7 @@ eval "$(starship init zsh)"
 # uv aliases
 alias va='source .venv/bin/activate'
 alias vd='deactivate'
+
+export PATH=$PATH:~/bin
+
+alias cm=chezmoi
