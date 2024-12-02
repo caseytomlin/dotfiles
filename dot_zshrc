@@ -114,7 +114,7 @@ DISABLE_AUTO_UPDATE=true
 DISABLE_UPDATE_PROMPT=true
 # source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 eval "$(starship init zsh)"
-source <(fzf --zsh)
+# source <(fzf --zsh)
 # uv aliases
 alias va='source .venv/bin/activate'
 alias vd='deactivate'
