@@ -2,7 +2,7 @@
 {{- $interactive := stdinIsATTY -}}
 
 {{- /* Initializes the name variable with a default value */ -}}
-{{- $name := "Your Name" -}}
+{{- $name := "Casey Tomlin" -}}
 {{- /* If name was previously set, reuses it */ -}}
 {{- if hasKey . "name" -}}
 {{-   $name = .name -}}
@@ -12,7 +12,7 @@
 {{- end -}}
 
 {{- /* Does the same for the email */ -}}
-{{- $email := "your@email.com" -}}
+{{- $email := "casey.tomlin@bayer.com" -}}
 {{- if hasKey . "email" -}}
 {{-   $email = .email -}}
 {{- else if $interactive -}}
@@ -23,6 +23,7 @@
 {{-   writeToStdout "💡 Tip: you can re-enter your name and email with `chezmoi init --data=false`.\n" -}}
 {{- end -}}
 
+sourceDir = {{ .chezmoi.sourceDir | quote }}
 
 [data]
     name = {{ $name | quote }}
