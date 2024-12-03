@@ -14,8 +14,7 @@ else
     git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
 fi
 
-
-sudo rm /etc/apt/trusted.gpg.d/shells_zsh-users_zsh-autosuggestions.gpg 
+[ -f /etc/apt/trusted.gpg.d/shells_zsh-users_zsh-autosuggestions.gpg ] && sudo rm /etc/apt/trusted.gpg.d/shells_zsh-users_zsh-autosuggestions.gpg 
 wget -qO- https://build.opensuse.org/projects/shells:zsh-users:zsh-autosuggestions/signing_keys/download\?kind\=gpg | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/shells_zsh-users_zsh-autosuggestions.gpg
 
 if [ -d "`eval echo ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions`" ]; then
