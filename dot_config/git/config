@@ -30,5 +30,3 @@
 	defaultBranch = main
 [core]
 	autocrlf = input
-[credential]
-	helper = manager
