@@ -16,3 +16,6 @@ else
     exit 0
 fi
 
+if [ -z "$CODESPACES" ]; then
+  git config --global url."git@github.com".insteadOf "https://github.com"
+fi
