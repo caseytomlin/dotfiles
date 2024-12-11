@@ -30,3 +30,5 @@
 	defaultBranch = main
 [core]
 	autocrlf = input
+[commit]
+	gpgsign = false
