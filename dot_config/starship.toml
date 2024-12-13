@@ -3,3 +3,7 @@ disabled = false
 
 [character]
 format = "🍕 $symbol "
+
+[prompt]
+command_timeout = 10000
+
