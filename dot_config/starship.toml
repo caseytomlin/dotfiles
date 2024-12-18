@@ -7,3 +7,6 @@ disabled = false
 
 [character]
 format = "🍕 $symbol "
+
+[container]
+disabled = true
