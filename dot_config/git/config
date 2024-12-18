@@ -32,3 +32,5 @@
 	autocrlf = input
 [commit]
 	gpgsign = false
+[url "git@github.com:"]
+        insteadOf = "https://github.com/"
