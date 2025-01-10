@@ -175,4 +175,4 @@ delpod() {
     KUBECONFIG=~/.kube/config_${ENV}_dev kubectl delete pod ${POD_NAME} --namespace=${NAMESPACE}
 }
 
-
+alias disk=sudo du -h --max-depth=6 / | sort -hr | head -n 10
