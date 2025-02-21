@@ -2,7 +2,7 @@
 
 set -ex
 
-sudo apt update
+sudo apt update && sudo apt upgrade -y
 
 echo "Installing tools..."
 
