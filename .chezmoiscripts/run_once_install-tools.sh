@@ -9,7 +9,7 @@ echo "Installing tools..."
 if command -v atuin >/dev/null 2>&1; then
     echo "atuin already installed"
 else
-    bash <(curl --proto '=https' --tlsv1.2 -sSf https://setup.atuin.sh)
+    curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh
 fi
 
 if  command -v pipx >/dev/null 2>&1; then 
