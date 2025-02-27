@@ -82,3 +82,5 @@ alias disk=sudo du -h --max-depth=6 / | sort -hr | head -n 10
 source $HOME/.atuin/bin/env zsh
 
 export EDITOR='code --wait'
+
+eval "$(atuin init zsh)"
