@@ -2,7 +2,9 @@
 
 set -ex
 
-sudo apt-get update && sudo apt-get upgrade -y
+export DEBIAN_FRONTEND=noninteractive
+
+sudo apt-get update && sudo apt-get --yes --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade
 
 echo "Installing tools..."
 
