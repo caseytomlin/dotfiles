@@ -2,7 +2,7 @@
 
 set -ex
 
-sudo apt update && sudo apt upgrade -y
+sudo apt-get update && sudo apt-get upgrade -y
 
 echo "Installing tools..."
 
@@ -15,7 +15,7 @@ fi
 if  command -v pipx >/dev/null 2>&1; then 
     echo "pipx already installed"
 else
-    sudo apt install pipx
+    sudo apt-get install pipx
     pipx ensurepath
 fi
 
@@ -28,7 +28,7 @@ fi
 if  command -v fzf >/dev/null 2>&1; then 
     echo "fzf already installed"
 else
-    sudo apt install fzf
+    sudo apt-get install fzf
 fi
 
 if  command -v uv >/dev/null 2>&1; then 
