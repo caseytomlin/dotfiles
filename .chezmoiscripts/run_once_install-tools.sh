@@ -4,7 +4,9 @@ set -ex
 
 export DEBIAN_FRONTEND=noninteractive
 
-alias s='sudo apt-get --yes --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"'
+s() {
+    sudo apt-get --yes --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" "$@"
+}
 
 sudo apt-get update && s upgrade
 
@@ -14,6 +16,12 @@ if command -v zsh >/dev/null 2>&1; then
     echo "zsh already installed"
 else
     s install -y zsh
+fi
+
+if [ -d "$HOME/.oh-my-zsh" ]; then
+    echo "oh-my-zsh already installed"
+else
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
 fi
 
 if command -v atuin >/dev/null 2>&1; then
