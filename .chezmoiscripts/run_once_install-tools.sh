@@ -4,9 +4,17 @@ set -ex
 
 export DEBIAN_FRONTEND=noninteractive
 
-sudo apt-get update && sudo apt-get --yes --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade
+alias s='sudo apt-get --yes --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"'
+
+sudo apt-get update && s upgrade
 
 echo "Installing tools..."
+
+if command -v zsh >/dev/null 2>&1; then
+    echo "zsh already installed"
+else
+    s install -y zsh
+fi
 
 if command -v atuin >/dev/null 2>&1; then
     echo "atuin already installed"
@@ -17,7 +25,7 @@ fi
 if  command -v pipx >/dev/null 2>&1; then 
     echo "pipx already installed"
 else
-    sudo apt-get install pipx
+    s install pipx
     pipx ensurepath
 fi
 
@@ -30,7 +38,7 @@ fi
 if  command -v fzf >/dev/null 2>&1; then 
     echo "fzf already installed"
 else
-    sudo apt-get install fzf
+    s install fzf
 fi
 
 if  command -v uv >/dev/null 2>&1; then 
