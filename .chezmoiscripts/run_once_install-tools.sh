@@ -5,7 +5,7 @@ set -ex
 export DEBIAN_FRONTEND=noninteractive
 
 s() {
-    sudo apt-get --yes --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" "$@"
+    sudo DEBIAN_FRONTEND=noninteractive apt-get --yes --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" "$@"
 }
 
 sudo apt-get update && s upgrade
