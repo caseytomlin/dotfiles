@@ -25,58 +25,6 @@ export PATH=$PATH:$HOME/bin:$HOME/.local/bin
 
 alias cm=chezmoi
 
-alias costpods="KUBECONFIG=~/.kube/config_cost_dev kubectl --namespace=efds-fcpf-cost-forecasting get pod | grep Running"
-alias opexpods="KUBECONFIG=~/.kube/config_opex_dev kubectl --namespace=efds-fcpf-opex-forecasting get pod | grep Running"
-
-kexec() {
-    local ENV=$1
-    local POD_NAME=$2
-    local NAMESPACE
-
-    case $ENV in
-        lefim)
-            NAMESPACE="efds-fcpf-lefim-sales"
-            ;;
-        cost)
-            NAMESPACE="efds-fcpf-cost-forecasting"
-            ;;
-        opex)
-            NAMESPACE="efds-fcpf-opex-forecasting"
-            ;;
-        *)
-            echo "Invalid ENV. Please use 'lefim', 'cost', or 'opex'."
-            return 1
-            ;;
-    esac
-
-    KUBECONFIG=~/.kube/config_${ENV}_dev kubectl exec --stdin --tty ${POD_NAME} --namespace=${NAMESPACE} -- /bin/bash
-}
-
-
-delpod() {
-    local ENV=$1
-    local POD_NAME=$2
-    local NAMESPACE
-
-    case $ENV in
-        lefim)
-            NAMESPACE="efds-fcpf-lefim-sales"
-            ;;
-        cost)
-            NAMESPACE="efds-fcpf-cost-forecasting"
-            ;;
-        opex)
-            NAMESPACE="efds-fcpf-opex-forecasting"
-            ;;
-        *)
-            echo "Invalid ENV. Please use 'lefim', 'cost', or 'opex'."
-            return 1
-            ;;
-    esac
-
-    KUBECONFIG=~/.kube/config_${ENV}_dev kubectl delete pod ${POD_NAME} --namespace=${NAMESPACE}
-}
-
 alias disk=sudo du -h --max-depth=6 / | sort -hr | head -n 10
 
 source $HOME/.atuin/bin/env zsh
@@ -84,3 +32,5 @@ source $HOME/.atuin/bin/env zsh
 export EDITOR='code --wait'
 
 eval "$(atuin init zsh)"
+
+sudo chmod 666 /var/run/docker.sock
