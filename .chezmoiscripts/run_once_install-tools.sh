@@ -68,3 +68,9 @@ if  command -v starship >/dev/null 2>&1; then
 else
     curl -fsSL https://starship.rs/install.sh | sudo sh -s -- -y
 fi
+
+if command -v opencode >/dev/null 2>&1; then
+    echo "opencode-cli already installed"
+else
+    curl -fsSL https://opencode.ai/install | bash
+fi
