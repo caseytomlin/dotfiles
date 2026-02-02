@@ -34,3 +34,5 @@ export EDITOR='code --wait'
 eval "$(atuin init zsh)"
 
 sudo chmod 666 /var/run/docker.sock
+
+export PATH=/home/vscode/.opencode/bin:$PATH
