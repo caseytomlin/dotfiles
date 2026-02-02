@@ -1,0 +1,16 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "mga": {
+      "options": {
+        "baseURL": "https://chat.int.bayer.com/api/v2/chat/completions"
+      },
+      "auth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key",
+        "value": "${MGA_API_KEY}"
+      }
+    }
+  }
+}
