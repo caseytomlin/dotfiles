@@ -3,13 +3,11 @@
   "provider": {
     "mga": {
       "options": {
-        "baseURL": "https://chat.int.bayer.com/api/v2/chat/completions"
-      },
-      "auth": {
-        "type": "apiKey",
-        "in": "header",
-        "name": "x-api-key",
-        "value": "${MGA_API_KEY}"
+        "baseURL": "https://chat.int.bayer.com/api/v2/chat/completions",
+        "apiKey": "{env:MGA_API_KEY}",
+        "headers": {
+          "Authorization": "Bearer custom-token"
+        }
       }
     }
   }
