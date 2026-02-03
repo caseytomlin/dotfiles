@@ -75,18 +75,23 @@ else
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
 fi
 
-if command -v ccr >/dev/null 2>&1; then
-    echo "claude code router already installed"
+if command -v opencode >/dev/null 2>&1; then
+    echo "OpenCode CLI already installed"
 else
-    # Install Claude Code globally
-    npm install -g @anthropic-ai/claude-code
+    curl -fsSL https://opencode.ai/install.sh | bash
 
-    # Install Claude Code Router for myGenAssist integration
-    npm install -g @musistudio/claude-code-router
-fi
-
-# if command -v bun >/dev/null 2>&1; then
-#     echo "bun already installed"
+# if command -v ccr >/dev/null 2>&1; then
+#     echo "claude code router already installed"
 # else
-#     curl -fsSL https://bun.com/install | bash
+#     # Install Claude Code globally
+#     npm install -g @anthropic-ai/claude-code
+
+#     # Install Claude Code Router for myGenAssist integration
+#     npm install -g @musistudio/claude-code-router
 # fi
+
+if command -v bun >/dev/null 2>&1; then
+    echo "bun already installed"
+else
+    curl -fsSL https://bun.com/install | bash
+fi
