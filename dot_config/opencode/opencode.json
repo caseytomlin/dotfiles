@@ -11,11 +11,35 @@
           "gpt-5": {
             "name": "gpt-5"
           },
+          "gpt-5-mini": {
+            "name": "gpt-5-mini"
+          },
+          "gpt-5.2": {
+            "name": "gpt-5.2"
+          },
+          "gpt-5.2-codex": {
+            "name": "gpt-5.2-codex"
+          },
+          "claude-opus-4.5": {
+            "name": "claude-opus-4.5"
+          },
           "claude-sonnet-4": {
             "name": "claude-sonnet-4"
           },
+          "claude-sonnet-4.5": {
+            "name": "claude-sonnet-4.5"
+          },
+          "claude-haiku-4.5": {
+            "name": "claude-haiku-4.5"
+          },
           "gemini-2.5-pro": {
             "name": "gemini-2.5-pro"
+          },
+          "gemini-3-pro-preview": {
+            "name": "gemini-3-pro-preview"
+          },
+          "gemini-3-flash-preview": {
+            "name": "gemini-3-flash-preview"
           },
           "claude-sonnet-4-5-20250929-thinking": {
             "name": "claude-sonnet-4-5-20250929-thinking"
@@ -23,5 +47,9 @@
         }
       }
     }
-  }
+  },
+  "plugin": [
+    "oh-my-opencode@latest",
+    "opencode-antigravity-auth@1.4.3"
+  ]
 }
