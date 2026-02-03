@@ -8,6 +8,9 @@
         "baseURL": "https://chat.int.bayer.com/api/v2/chat/completions",
         "apiKey": "{env:MGA_API_KEY}",
         "models": {
+          "gpt-4o": {
+            "name": "gpt-4o"
+          },
           "gpt-5": {
             "name": "gpt-5"
           },
@@ -49,6 +52,6 @@
     }
   },
   "plugin": [
-    "oh-my-opencode@latest",
+    "oh-my-opencode@latest"
   ]
 }
