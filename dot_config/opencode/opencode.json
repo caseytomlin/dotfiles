@@ -8,7 +8,10 @@
         "apiKey": "{env:MGA_API_KEY}",
         "headers": {
           "Authorization": "Bearer custom-token"
-        }
+        },
+        "models": [
+          "claude-sonnet-4-5-20250929-thinking"
+        ]
       }
     }
   }
