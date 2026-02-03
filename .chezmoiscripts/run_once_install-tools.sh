@@ -74,3 +74,9 @@ if command -v opencode >/dev/null 2>&1; then
 else
     curl -fsSL https://opencode.ai/install | bash
 fi
+
+if command -v bun >/dev/null 2>&1; then
+    echo "bun already installed"
+else
+    curl -fsSL https://bun.com/install | bash
+fi
