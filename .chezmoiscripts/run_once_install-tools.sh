@@ -69,14 +69,24 @@ else
     curl -fsSL https://starship.rs/install.sh | sudo sh -s -- -y
 fi
 
-if command -v opencode >/dev/null 2>&1; then
-    echo "opencode-cli already installed"
+if command -v npm >/dev/null 2>&1; then
+    echo "npm already installed"
 else
-    curl -fsSL https://opencode.ai/install | bash
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
 fi
 
-if command -v bun >/dev/null 2>&1; then
-    echo "bun already installed"
+if command -v ccr >/dev/null 2>&1; then
+    echo "claude code router already installed"
 else
-    curl -fsSL https://bun.com/install | bash
+    # Install Claude Code globally
+    npm install -g @anthropic-ai/claude-code
+
+    # Install Claude Code Router for myGenAssist integration
+    npm install -g @musistudio/claude-code-router
 fi
+
+# if command -v bun >/dev/null 2>&1; then
+#     echo "bun already installed"
+# else
+#     curl -fsSL https://bun.com/install | bash
+# fi
