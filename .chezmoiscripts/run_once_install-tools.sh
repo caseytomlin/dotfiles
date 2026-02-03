@@ -79,6 +79,7 @@ if command -v opencode >/dev/null 2>&1; then
     echo "OpenCode CLI already installed"
 else
     curl -fsSL https://opencode.ai/install.sh | bash
+fi
 
 # if command -v ccr >/dev/null 2>&1; then
 #     echo "claude code router already installed"
