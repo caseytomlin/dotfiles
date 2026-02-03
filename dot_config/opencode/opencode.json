@@ -15,5 +15,5 @@
       }
     }
   },
-  "model": "claude-sonnet-4-5-20250929-thinking"
+  "model": "mga:claude-sonnet-4-5-20250929-thinking"
 }
