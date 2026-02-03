@@ -5,7 +5,7 @@
       "npm": "@ai-sdk/openai-compatible",
       "name": "MyGenAssist",
       "options": {
-        "baseURL": "https://chat.int.bayer.com/api/v2",
+        "baseURL": "https://chat.int.bayer.com/api/v2/chat/completions",
         "apiKey": "{env:MGA_API_KEY}",
         "models": {
           "gpt-5": {
@@ -50,6 +50,5 @@
   },
   "plugin": [
     "oh-my-opencode@latest",
-    "opencode-antigravity-auth@1.4.3"
   ]
 }
