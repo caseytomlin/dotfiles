@@ -44,9 +44,6 @@
           },
           "gemini-3-flash-preview": {
             "name": "gemini-3-flash-preview"
-          },
-          "claude-sonnet-4-5-20250929-thinking": {
-            "name": "claude-sonnet-4-5-20250929-thinking"
           }
         }
       }
