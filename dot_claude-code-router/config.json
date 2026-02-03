@@ -1,0 +1,21 @@
+{
+  "LOG": false,
+  "OPENAI_API_KEY": "",
+  "OPENAI_BASE_URL": "",
+  "OPENAI_MODEL": "",
+  "Providers": [
+    {
+      "name": "myGenAssist",
+      "api_base_url": "https://chat.int.bayer.com/api/v2/chat/completions",
+      "api_key": "{env:MGA_API_KEY}",
+      "models": [
+        "gpt-4o",
+        "claude-sonnet-4-5",
+        "gemini-2.5-pro"
+      ]
+    }
+  ],
+  "Router": {
+    "default": "myGenAssist,claude-sonnet-4-5"
+  }
+}
