@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -ex
+set -euo pipefail
 
 export DEBIAN_FRONTEND=noninteractive
 
@@ -91,8 +91,15 @@ else
     npm install -g @musistudio/claude-code-router
 fi
 
-# if command -v bun >/dev/null 2>&1; then
-#     echo "bun already installed"
-# else
-#     curl -fsSL https://bun.com/install | bash
-# fi
+
+CONFIG="$HOME/.claude-code-router/config.json"
+MODEL_IDS=$(curl -s -H "Authorization: Bearer $MGA_API_KEY" https://chat.int.bayer.com/api/v2/models | jq -r '.data[].id')
+
+PRIMARY_MODEL=$(printf '%s\n' "$MODEL_IDS" | grep -m1 'claude' || printf '%s\n' "$MODEL_IDS" | head -n1)
+
+tmp=$(mktemp)
+jq --argjson models "$(printf '%s\n' "$MODEL_IDS" | jq -R . | jq -s .)" \
+   --arg primary "$PRIMARY_MODEL" \
+   '.Providers[0].models = $models | .Router.default = "myGenAssist,\($primary)"' \
+   "$CONFIG" > "$tmp"
+mv "$tmp" "$CONFIG"
