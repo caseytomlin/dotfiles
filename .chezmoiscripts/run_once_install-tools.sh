@@ -89,8 +89,6 @@ else
 
     # Install Claude Code Router for myGenAssist integration
     npm install -g @musistudio/claude-code-router
-
-    ccr code
 fi
 
 # if command -v bun >/dev/null 2>&1; then
