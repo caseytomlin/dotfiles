@@ -92,7 +92,24 @@ else
 fi
 
 
-CONFIG="$HOME/.claude-code-router/config.json"
+CONFIG_DIR="$HOME/.claude-code-router"
+CONFIG="$CONFIG_DIR/config.json"
+mkdir -p "$CONFIG_DIR"
+if [ ! -f "$CONFIG" ]; then
+        cat > "$CONFIG" <<'EOF'
+{
+    "Providers": [
+        {
+            "name": "myGenAssist",
+            "models": []
+        }
+    ],
+    "Router": {
+        "default": ""
+    }
+}
+EOF
+fi
 MODEL_IDS=$(curl -s -H "Authorization: Bearer $MGA_API_KEY" https://chat.int.bayer.com/api/v2/models | jq -r '.data[].id')
 
 PRIMARY_MODEL=$(printf '%s\n' "$MODEL_IDS" | grep -m1 'claude' || printf '%s\n' "$MODEL_IDS" | head -n1)
