@@ -33,7 +33,5 @@ export EDITOR='code --wait'
 
 eval "$(atuin init zsh)"
 
-sudo chmod 666 /var/run/docker.sock
-
 export PATH="$HOME/.opencode/bin:$PATH"
 export PATH="$HOME/.bun/bin:$PATH"
