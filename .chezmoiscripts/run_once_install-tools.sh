@@ -100,8 +100,10 @@ if [ ! -f "$CONFIG" ]; then
 {
     "Providers": [
         {
-            "name": "myGenAssist",
-            "models": []
+        "name": "myGenAssist",
+        "api_base_url": "https://chat.int.bayer.com/api/v2/chat/completions",
+        "api_key": "$MGA_API_KEY",
+        "models": []
         }
     ],
     "Router": {
