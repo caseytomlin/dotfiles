@@ -73,7 +73,10 @@ if command -v npm >/dev/null 2>&1; then
     echo "npm already installed"
 else
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 fi
+
 
 # if command -v opencode >/dev/null 2>&1; then
 #     echo "OpenCode CLI already installed"
