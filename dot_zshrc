@@ -35,3 +35,34 @@ eval "$(atuin init zsh)"
 
 export PATH="$HOME/.opencode/bin:$PATH"
 export PATH="$HOME/.bun/bin:$PATH"
+
+# Refresh claude-code-router model list from myGenAssist API
+ccr-refresh() {
+    local config="$HOME/.claude-code-router/config.json"
+    if [ ! -f "$config" ]; then
+        echo "ccr-refresh: config not found at $config" >&2
+        return 1
+    fi
+    if [ -z "${MGA_API_KEY:-}" ]; then
+        echo "ccr-refresh: MGA_API_KEY is not set" >&2
+        return 1
+    fi
+    local model_ids
+    model_ids=$(curl -sf -H "Authorization: Bearer $MGA_API_KEY" \
+        https://chat.int.bayer.com/api/v2/models | jq -r '.data[].id' 2>/dev/null)
+    if [ -z "$model_ids" ]; then
+        echo "ccr-refresh: model fetch returned no results, config unchanged" >&2
+        return 1
+    fi
+    local claude_models primary_model
+    claude_models=$(echo "$model_ids" | grep 'claude' | grep -v 'azure' | sort -V)
+    primary_model=$(echo "$claude_models" | tail -n1)
+    [ -z "$primary_model" ] && primary_model=$(echo "$model_ids" | head -n1)
+    local tmp
+    tmp=$(mktemp)
+    jq --argjson models "$(echo "$model_ids" | jq -R . | jq -s .)" \
+       --arg primary "$primary_model" \
+       '.Providers[0].models = $models | .Router.default = "myGenAssist,\($primary)"' \
+       "$config" > "$tmp" && mv "$tmp" "$config"
+    echo "ccr-refresh: $(echo "$model_ids" | wc -l | tr -d ' ') models, default: $primary_model"
+}
