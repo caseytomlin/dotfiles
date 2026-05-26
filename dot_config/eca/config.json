@@ -26,8 +26,7 @@
         "claude-sonnet-4.6": {},
         "claude-opus-4.6": {},
         "gpt-5": {}
-      },
-      "fetchModels": false
+      }
     }
   },
   "defaultModel": "my-gen-assist/claude-sonnet-4.6",
