@@ -1,0 +1,39 @@
+{
+  "$schema": "https://eca.dev/config.json",
+  "providers": {
+    "myGenAssist": {
+      "api": "openai-chat",
+      "url": "https://chat.int.bayer.com/api/v2",
+      "completionUrlRelativePath": "/chat/completions",
+      "key": "${env:MGA_API_KEY}",
+      "retryRules": [
+        {
+          "status": 429,
+          "label": "Rate limited or budget exhausted"
+        },
+        {
+          "errorPattern": "quota|insufficient[_ -]?quota|budget|credit|capacity.*exceeded|rate limit",
+          "label": "Provider quota/capacity issue"
+        }
+      ],
+      "models": {
+        "claude-sonnet-4.6": {},
+        "claude-opus-4.6": {},
+        "gpt-5": {}
+      }
+    },
+    "github-copilot": {
+      "models": {
+        "gpt-4.1": {},
+        "gpt-4o": {}
+      }
+    }
+  },
+  "defaultModel": "myGenAssist/claude-sonnet-4.6",
+  "completion": {
+    "model": "github-copilot/gpt-4.1"
+  },
+  "rewrite": {
+    "model": "github-copilot/gpt-4.1"
+  }
+}
