@@ -1,7 +1,13 @@
 {
   "$schema": "https://eca.dev/config.json",
   "providers": {
-    "myGenAssist": {
+    "github-copilot": {
+      "models": {
+        "gpt-4.1": {},
+        "gpt-4o": {}
+      }
+    },
+    "my-gen-assist": {
       "api": "openai-chat",
       "url": "https://chat.int.bayer.com/api/v2",
       "completionUrlRelativePath": "/chat/completions",
@@ -20,16 +26,11 @@
         "claude-sonnet-4.6": {},
         "claude-opus-4.6": {},
         "gpt-5": {}
-      }
-    },
-    "github-copilot": {
-      "models": {
-        "gpt-4.1": {},
-        "gpt-4o": {}
-      }
+      },
+      "fetchModels": false
     }
   },
-  "defaultModel": "myGenAssist/claude-sonnet-4.6",
+  "defaultModel": "my-gen-assist/claude-sonnet-4.6",
   "completion": {
     "model": "github-copilot/gpt-4.1"
   },
