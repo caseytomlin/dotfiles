@@ -36,6 +36,84 @@ eval "$(atuin init zsh)"
 export PATH="$HOME/.opencode/bin:$PATH"
 export PATH="$HOME/.bun/bin:$PATH"
 
+# Sync ECA my-gen-assist model map from claude-code-router models
+ccr-sync-eca-models() {
+    local router_config="$HOME/.claude-code-router/config.json"
+    local eca_config="$HOME/.config/eca/config.json"
+
+    if [ ! -f "$router_config" ]; then
+        echo "ccr-sync-eca-models: router config not found at $router_config" >&2
+        return 1
+    fi
+    if [ ! -f "$eca_config" ]; then
+        echo "ccr-sync-eca-models: eca config not found at $eca_config" >&2
+        return 1
+    fi
+
+    local models_json
+    models_json=$(jq -c '[
+        .Providers[]?
+        | select(.name == "myGenAssist" or .name == "my-gen-assist")
+        | .models[]?
+        | select(type == "string" and length > 0)
+    ] | unique | sort' "$router_config" 2>/dev/null)
+
+    if [ -z "$models_json" ] || [ "$models_json" = "[]" ]; then
+        echo "ccr-sync-eca-models: no router models found, eca config unchanged" >&2
+        return 1
+    fi
+
+    local model_count tmp
+    model_count=$(echo "$models_json" | jq 'length')
+    tmp=$(mktemp)
+
+    jq --argjson models "$models_json" '
+      .providers["my-gen-assist"].models =
+        (reduce $models[] as $m ({}; . + {($m): {}}))
+    ' "$eca_config" > "$tmp" && mv "$tmp" "$eca_config"
+
+    echo "ccr-sync-eca-models: synced ${model_count} models to $eca_config"
+}
+
+# Sync ECA my-gen-assist model map from claude-code-router models
+ccr-sync-eca-models() {
+    local router_config="$HOME/.claude-code-router/config.json"
+    local eca_config="$HOME/.config/eca/config.json"
+
+    if [ ! -f "$router_config" ]; then
+        echo "ccr-sync-eca-models: router config not found at $router_config" >&2
+        return 1
+    fi
+    if [ ! -f "$eca_config" ]; then
+        echo "ccr-sync-eca-models: eca config not found at $eca_config" >&2
+        return 1
+    fi
+
+    local models_json
+    models_json=$(jq -c '[
+        .Providers[]?
+        | select(.name == "myGenAssist" or .name == "my-gen-assist")
+        | .models[]?
+        | select(type == "string" and length > 0)
+    ] | unique | sort' "$router_config" 2>/dev/null)
+
+    if [ -z "$models_json" ] || [ "$models_json" = "[]" ]; then
+        echo "ccr-sync-eca-models: no router models found, eca config unchanged" >&2
+        return 1
+    fi
+
+    local model_count tmp
+    model_count=$(echo "$models_json" | jq 'length')
+    tmp=$(mktemp)
+
+    jq --argjson models "$models_json" '
+      .providers["my-gen-assist"].models =
+        (reduce $models[] as $m ({}; . + {($m): {}}))
+    ' "$eca_config" > "$tmp" && mv "$tmp" "$eca_config"
+
+    echo "ccr-sync-eca-models: synced ${model_count} models to $eca_config"
+}
+
 # Refresh claude-code-router model list from myGenAssist API
 ccr-refresh() {
     local config="$HOME/.claude-code-router/config.json"
@@ -48,8 +126,7 @@ ccr-refresh() {
         return 1
     fi
     local model_ids
-    model_ids=$(curl -sf -H "Authorization: Bearer $MGA_API_KEY" \
-        https://chat.int.bayer.com/api/v2/models | jq -r '.data[].id' 2>/dev/null)
+    model_ids=$(curl -sf -H "Authorization: Bearer $MGA_API_KEY"         https://chat.int.bayer.com/api/v2/models | jq -r '.data[].id' 2>/dev/null)
     if [ -z "$model_ids" ]; then
         echo "ccr-refresh: model fetch returned no results, config unchanged" >&2
         return 1
@@ -60,9 +137,9 @@ ccr-refresh() {
     [ -z "$primary_model" ] && primary_model=$(echo "$model_ids" | head -n1)
     local tmp
     tmp=$(mktemp)
-    jq --argjson models "$(echo "$model_ids" | jq -R . | jq -s .)" \
-       --arg primary "$primary_model" \
-       '.Providers[0].models = $models | .Router.default = "myGenAssist,\($primary)"' \
-       "$config" > "$tmp" && mv "$tmp" "$config"
+    jq --argjson models "$(echo "$model_ids" | jq -R . | jq -s .)"        --arg primary "$primary_model"        '.Providers[0].models = $models | .Router.default = "myGenAssist,\($primary)"'        "$config" > "$tmp" && mv "$tmp" "$config"
     echo "ccr-refresh: $(echo "$model_ids" | wc -l | tr -d ' ') models, default: $primary_model"
+
+    # Keep ECA model picker aligned with router models.
+    ccr-sync-eca-models || echo "ccr-refresh: warning: could not sync ECA models" >&2
 }
