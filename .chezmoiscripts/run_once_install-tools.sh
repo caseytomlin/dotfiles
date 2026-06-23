@@ -21,7 +21,7 @@ fi
 if [ -d "$HOME/.oh-my-zsh" ]; then
     echo "oh-my-zsh already installed"
 else
-    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended --keep-zshrc
 fi
 
 if command -v atuin >/dev/null 2>&1; then
