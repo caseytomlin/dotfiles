@@ -143,3 +143,5 @@ ccr-refresh() {
     # Keep ECA model picker aligned with router models.
     ccr-sync-eca-models || echo "ccr-refresh: warning: could not sync ECA models" >&2
 }
+# Source WSL proxy setup if present.
+[ -f "$HOME/.proxy.sh" ] && . "$HOME/.proxy.sh"

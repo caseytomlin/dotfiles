@@ -1,0 +1,38 @@
+{{- if eq .chezmoi.os "linux" -}}
+# ~/.proxy.sh
+# WSL-only proxy setup. Managed by chezmoi.
+
+_proxy_info() {
+  printf 'HTTP_PROXY=%s\n' "${HTTP_PROXY:-}"
+  printf 'HTTPS_PROXY=%s\n' "${HTTPS_PROXY:-}"
+  printf 'http_proxy=%s\n' "${http_proxy:-}"
+  printf 'https_proxy=%s\n' "${https_proxy:-}"
+}
+
+_proxy_off() {
+  unset HTTP_PROXY HTTPS_PROXY http_proxy https_proxy
+}
+
+alias proxy-info=_proxy_info
+alias proxy-off=_proxy_off
+
+if [ -r /proc/version ] && grep -qi microsoft /proc/version && command -v powershell.exe >/dev/null 2>&1; then
+  _proxy_url="$(
+    powershell.exe -NoProfile -NonInteractive -Command '[System.Net.WebRequest]::GetSystemWebProxy().GetProxy("http://google.com").AbsoluteUri' 2>/dev/null \
+      | tr -d '\r' \
+      | head -n 1
+  )"
+
+  case "$_proxy_url" in
+    http://google.com|http://google.com/) ;;
+    http://*)
+      export HTTP_PROXY="$_proxy_url"
+      export HTTPS_PROXY="$_proxy_url"
+      export http_proxy="$_proxy_url"
+      export https_proxy="$_proxy_url"
+      ;;
+  esac
+
+  unset _proxy_url
+fi
+{{- end }}
