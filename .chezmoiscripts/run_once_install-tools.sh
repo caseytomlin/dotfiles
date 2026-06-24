@@ -8,6 +8,27 @@ s() {
     sudo DEBIAN_FRONTEND=noninteractive apt-get --yes --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" "$@"
 }
 
+ensure_user_npm_prefix() {
+    if ! command -v npm >/dev/null 2>&1; then
+        return 0
+    fi
+
+    local desired_prefix="${HOME}/.local"
+    local current_prefix
+    current_prefix="$(npm config get prefix 2>/dev/null || true)"
+
+    if [ "$current_prefix" != "$desired_prefix" ]; then
+        npm config set prefix "$desired_prefix"
+    fi
+
+    mkdir -p "$desired_prefix/bin" "$desired_prefix/lib"
+
+    case ":$PATH:" in
+        *":$desired_prefix/bin:"*) ;;
+        *) export PATH="$desired_prefix/bin:$PATH" ;;
+    esac
+}
+
 sudo apt-get update && s upgrade
 
 echo "Installing tools..."
@@ -88,6 +109,8 @@ else
     fi
 fi
 
+ensure_user_npm_prefix
+
 # if command -v opencode >/dev/null 2>&1; then
 #     echo "OpenCode CLI already installed"
 # else
@@ -125,13 +148,22 @@ if [ ! -f "$CONFIG" ]; then
 }
 EOF
 fi
-MODEL_IDS=$(curl -s -H "Authorization: Bearer $MGA_API_KEY" https://chat.int.bayer.com/api/v2/models | jq -r '.data[].id')
 
-PRIMARY_MODEL=$(printf '%s\n' "$MODEL_IDS" | grep -m1 'claude' || printf '%s\n' "$MODEL_IDS" | head -n1)
+if [ -n "${MGA_API_KEY:-}" ]; then
+    MODEL_IDS=$(curl -fss -H "Authorization: Bearer $MGA_API_KEY" https://chat.int.bayer.com/api/v2/models | jq -r '.data[].id')
 
-tmp=$(mktemp)
-jq --argjson models "$(printf '%s\n' "$MODEL_IDS" | jq -R . | jq -s .)" \
-   --arg primary "$PRIMARY_MODEL" \
-   '.Providers[0].models = $models | .Router.default = "myGenAssist,\($primary)"' \
-   "$CONFIG" > "$tmp"
-mv "$tmp" "$CONFIG"
+    if [ -n "$MODEL_IDS" ]; then
+        PRIMARY_MODEL=$(printf '%s\n' "$MODEL_IDS" | grep -m1 'claude' || printf '%s\n' "$MODEL_IDS" | head -n1)
+
+        tmp=$(mktemp)
+        jq --argjson models "$(printf '%s\n' "$MODEL_IDS" | jq -R . | jq -s .)" \
+           --arg primary "$PRIMARY_MODEL" \
+           '.Providers[0].models = $models | .Router.default = "myGenAssist,\($primary)"' \
+           "$CONFIG" > "$tmp"
+        mv "$tmp" "$CONFIG"
+    else
+        echo "MGA_API_KEY is set, but no models were returned; leaving claude-code-router config unchanged"
+    fi
+else
+    echo "MGA_API_KEY not set - skipping claude-code-router model refresh"
+fi
