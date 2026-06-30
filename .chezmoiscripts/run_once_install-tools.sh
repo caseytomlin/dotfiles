@@ -70,7 +70,7 @@ fi
 if command -v atuin >/dev/null 2>&1; then
     echo "atuin already installed"
 else
-    curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh
+    curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh -s -- --non-interactive
 fi
 
 if  command -v pipx >/dev/null 2>&1; then 
