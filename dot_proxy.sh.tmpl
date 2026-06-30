@@ -16,7 +16,7 @@ _proxy_off() {
 alias proxy-info=_proxy_info
 alias proxy-off=_proxy_off
 
-if [ -r /proc/version ] && grep -qi microsoft /proc/version && command -v powershell.exe >/dev/null 2>&1; then
+if false && [ -r /proc/version ] && grep -qi microsoft /proc/version && command -v powershell.exe >/dev/null 2>&1; then
   _proxy_url="$(
     powershell.exe -NoProfile -NonInteractive -Command '[System.Net.WebRequest]::GetSystemWebProxy().GetProxy("http://google.com").AbsoluteUri' 2>/dev/null \
       | tr -d '\r' \
