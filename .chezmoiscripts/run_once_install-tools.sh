@@ -8,17 +8,39 @@ s() {
     sudo DEBIAN_FRONTEND=noninteractive apt-get --yes --force-yes -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" "$@"
 }
 
+run_with_timeout() {
+    local seconds="$1"
+    shift
+
+    if command -v timeout >/dev/null 2>&1; then
+        timeout "$seconds" "$@"
+    else
+        "$@"
+    fi
+}
+
 ensure_user_npm_prefix() {
     if ! command -v npm >/dev/null 2>&1; then
         return 0
     fi
 
+    export CI=true
+    export npm_config_update_notifier=false
+    export npm_config_fund=false
+    export npm_config_audit=false
+    export npm_config_progress=false
+
     local desired_prefix="${HOME}/.local"
     local current_prefix
-    current_prefix="$(npm config get prefix 2>/dev/null || true)"
+
+    current_prefix="$(run_with_timeout 10s npm config get prefix 2>/dev/null || true)"
+    current_prefix="$(printf '%s' "$current_prefix" | tr -d '\r')"
 
     if [ "$current_prefix" != "$desired_prefix" ]; then
-        npm config set prefix "$desired_prefix"
+        run_with_timeout 10s npm config set prefix "$desired_prefix" --location=user >/dev/null 2>&1 || {
+            echo "warning: failed to set npm user prefix to $desired_prefix; continuing"
+            return 0
+        }
     fi
 
     mkdir -p "$desired_prefix/bin" "$desired_prefix/lib"
@@ -121,10 +143,10 @@ if command -v ccr >/dev/null 2>&1; then
     echo "claude code router already installed"
 else
     # Install Claude Code globally
-    npm install -g @anthropic-ai/claude-code
+    npm install -g --no-audit --no-fund --loglevel=error @anthropic-ai/claude-code
 
     # Install Claude Code Router for myGenAssist integration
-    npm install -g @musistudio/claude-code-router
+    npm install -g --no-audit --no-fund --loglevel=error @musistudio/claude-code-router
 fi
 
 
