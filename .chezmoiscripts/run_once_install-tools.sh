@@ -79,6 +79,11 @@ ensure_user_npm_prefix() {
     export npm_config_audit=false
     export npm_config_progress=false
 
+    if [ -n "${NVM_DIR:-}" ] && command -v nvm >/dev/null 2>&1; then
+        run_with_timeout 10s npm config delete prefix --location=user >/dev/null 2>&1 || true
+        return 0
+    fi
+
     local desired_prefix="${HOME}/.local"
     local current_prefix
 
