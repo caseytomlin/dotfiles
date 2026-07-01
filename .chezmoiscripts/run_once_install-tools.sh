@@ -19,6 +19,55 @@ run_with_timeout() {
     fi
 }
 
+init_nvm() {
+    if [ -s "$HOME/.nvm/nvm.sh" ]; then
+        export NVM_DIR="$HOME/.nvm"
+    elif [ -s "/usr/local/share/nvm/nvm.sh" ]; then
+        export NVM_DIR="/usr/local/share/nvm"
+    else
+        return 1
+    fi
+
+    # shellcheck disable=SC1090
+    . "$NVM_DIR/nvm.sh"
+}
+
+ensure_nvm_and_node() {
+    if [ ! -s "$HOME/.nvm/nvm.sh" ] && [ ! -s "/usr/local/share/nvm/nvm.sh" ]; then
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
+    fi
+
+    init_nvm || {
+        echo "warning: nvm was not available after install; continuing with existing node"
+        return 0
+    }
+
+    local default_version major
+    default_version="$(nvm version default 2>/dev/null || true)"
+
+    if [ "$default_version" = "N/A" ] || [ -z "$default_version" ]; then
+        nvm install --lts
+        nvm alias default 'lts/*'
+    fi
+
+    nvm use --delete-prefix --silent default >/dev/null 2>&1 || {
+        nvm install --lts
+        nvm alias default 'lts/*'
+        nvm use --delete-prefix --silent default >/dev/null 2>&1 || true
+    }
+
+    if command -v node >/dev/null 2>&1; then
+        major="$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)"
+        if [ "${major:-0}" -lt 20 ]; then
+            nvm install --lts
+            nvm alias default 'lts/*'
+            nvm use --delete-prefix --silent default >/dev/null 2>&1 || true
+        fi
+    fi
+
+    hash -r
+}
+
 ensure_user_npm_prefix() {
     if ! command -v npm >/dev/null 2>&1; then
         return 0
@@ -92,6 +141,12 @@ else
     s install fzf
 fi
 
+if command -v jq >/dev/null 2>&1; then
+    echo "jq already installed"
+else
+    s install -y jq
+fi
+
 if  command -v uv >/dev/null 2>&1; then 
     echo "uv already installed"
 else
@@ -112,24 +167,7 @@ else
     curl -fsSL https://starship.rs/install.sh | sudo sh -s -- -y
 fi
 
-if command -v npm >/dev/null 2>&1; then
-    echo "npm already installed"
-else
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
-    if [ -s "$HOME/.nvm/nvm.sh" ]; then
-        export NVM_DIR="$HOME/.nvm"
-    elif [ -s "/usr/local/share/nvm/nvm.sh" ]; then
-        export NVM_DIR="/usr/local/share/nvm"
-    fi
-
-    if [ -n "${NVM_DIR:-}" ] && [ -s "$NVM_DIR/nvm.sh" ]; then
-        \. "$NVM_DIR/nvm.sh"
-        nvm install --lts
-        nvm alias default 'lts/*'
-        nvm use --silent default
-        hash -r
-    fi
-fi
+ensure_nvm_and_node
 
 ensure_user_npm_prefix
 
@@ -139,7 +177,7 @@ ensure_user_npm_prefix
 #     curl -fsSL https://opencode.ai/install.sh | bash
 # fi
 
-if command -v ccr >/dev/null 2>&1; then
+if command -v ccr >/dev/null 2>&1 && ccr --version >/dev/null 2>&1; then
     echo "claude code router already installed"
 else
     # Install Claude Code globally
@@ -160,7 +198,7 @@ if [ ! -f "$CONFIG" ]; then
         {
         "name": "myGenAssist",
         "api_base_url": "https://chat.int.bayer.com/api/v2/chat/completions",
-        "api_key": "$MGA_API_KEY",
+    "api_key": "${MGA_API_KEY}",
         "models": []
         }
     ],

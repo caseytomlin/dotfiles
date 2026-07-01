@@ -3,6 +3,24 @@ export ZSH=$HOME/.oh-my-zsh
 ZSH_THEME="robbyrussell"
 ENABLE_CORRECTION="true"
 
+export PATH="$HOME/.local/bin:$HOME/bin:$PATH"
+export PATH="$HOME/.opencode/bin:$PATH"
+export PATH="$HOME/.bun/bin:$PATH"
+
+if [ -s "$HOME/.nvm/nvm.sh" ]; then
+    export NVM_DIR="$HOME/.nvm"
+    . "$HOME/.nvm/nvm.sh"
+elif [ -s "/usr/local/share/nvm/nvm.sh" ]; then
+    export NVM_DIR="/usr/local/share/nvm"
+    . "/usr/local/share/nvm/nvm.sh"
+fi
+
+if command -v nvm >/dev/null 2>&1; then
+    nvm use --delete-prefix --silent default >/dev/null 2>&1 || true
+fi
+
+[ -f /etc/profile.d/workspace-dotenv.sh ] && . /etc/profile.d/workspace-dotenv.sh
+
 plugins=(
     fzf
     git
@@ -21,8 +39,6 @@ eval "$(starship init zsh)"
 alias va='source .venv/bin/activate'
 alias vd='deactivate'
 
-export PATH=$PATH:$HOME/bin:$HOME/.local/bin
-
 alias cm=chezmoi
 
 alias disk=sudo du -h --max-depth=6 / | sort -hr | head -n 10
@@ -33,47 +49,64 @@ export EDITOR='code --wait'
 
 eval "$(atuin init zsh)"
 
-export PATH="$HOME/.opencode/bin:$PATH"
-export PATH="$HOME/.bun/bin:$PATH"
+typeset -ga _workspace_dotenv_loaded_keys=()
 
-# Sync ECA my-gen-assist model map from claude-code-router models
-ccr-sync-eca-models() {
-    local router_config="$HOME/.claude-code-router/config.json"
-    local eca_config="$HOME/.config/eca/config.json"
+_workspace_dotenv_unload() {
+    local key
 
-    if [ ! -f "$router_config" ]; then
-        echo "ccr-sync-eca-models: router config not found at $router_config" >&2
-        return 1
-    fi
-    if [ ! -f "$eca_config" ]; then
-        echo "ccr-sync-eca-models: eca config not found at $eca_config" >&2
-        return 1
-    fi
+    for key in "${_workspace_dotenv_loaded_keys[@]}"; do
+        unset "$key"
+    done
 
-    local models_json
-    models_json=$(jq -c '[
-        .Providers[]?
-        | select(.name == "myGenAssist" or .name == "my-gen-assist")
-        | .models[]?
-        | select(type == "string" and length > 0)
-    ] | unique | sort' "$router_config" 2>/dev/null)
-
-    if [ -z "$models_json" ] || [ "$models_json" = "[]" ]; then
-        echo "ccr-sync-eca-models: no router models found, eca config unchanged" >&2
-        return 1
-    fi
-
-    local model_count tmp
-    model_count=$(echo "$models_json" | jq 'length')
-    tmp=$(mktemp)
-
-    jq --argjson models "$models_json" '
-      .providers["my-gen-assist"].models =
-        (reduce $models[] as $m ({}; . + {($m): {}}))
-    ' "$eca_config" > "$tmp" && mv "$tmp" "$eca_config"
-
-    echo "ccr-sync-eca-models: synced ${model_count} models to $eca_config"
+    _workspace_dotenv_loaded_keys=()
 }
+
+_workspace_dotenv_load_file() {
+    local file="$1"
+    local line key value
+
+    [[ -f "$file" ]] || return 1
+
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        line="${line#"${line%%[![:space:]]*}"}"
+        [[ -z "$line" || "$line" == \#* ]] && continue
+        line="${line#export }"
+        [[ "$line" == *=* ]] || continue
+
+        key="${line%%=*}"
+        value="${line#*=}"
+
+        [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue
+
+        if [[ "$value" == \"*\" && "$value" == *\" ]]; then
+            value="${value:1:${#value}-2}"
+        elif [[ "$value" == \'*\' && "$value" == *\' ]]; then
+            value="${value:1:${#value}-2}"
+        fi
+
+        if [[ -z "${(P)key:-}" ]]; then
+            export "$key=$value"
+            _workspace_dotenv_loaded_keys+=("$key")
+        fi
+    done < "$file"
+
+    return 0
+}
+
+_workspace_dotenv_refresh() {
+    local candidate
+
+    _workspace_dotenv_unload
+
+    for candidate in "$PWD/.env.local" "$PWD/.env"; do
+        _workspace_dotenv_load_file "$candidate" && return 0
+    done
+
+    return 0
+}
+
+chpwd_functions+=(_workspace_dotenv_refresh)
+_workspace_dotenv_refresh
 
 # Sync ECA my-gen-assist model map from claude-code-router models
 ccr-sync-eca-models() {
