@@ -35,8 +35,22 @@ source $ZSH/oh-my-zsh.sh
 
 eval "$(starship init zsh)"
 
-# uv aliases
-alias va='source .venv/bin/activate'
+# uv / venv helpers — prefer UV_PROJECT_ENVIRONMENT, then common directory names
+va() {
+    local candidates=()
+    [[ -n "${UV_PROJECT_ENVIRONMENT:-}" ]] && candidates+=("${UV_PROJECT_ENVIRONMENT}")
+    candidates+=(".venv" ".venv-devcontainer")
+
+    local v
+    for v in "${candidates[@]}"; do
+        [[ -n "$v" && -f "$v/bin/activate" ]] || continue
+        source "$v/bin/activate"
+        return 0
+    done
+
+    echo "va: no venv found (tried: ${(j:,:)candidates})" >&2
+    return 1
+}
 alias vd='deactivate'
 
 alias cm=chezmoi
