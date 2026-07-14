@@ -234,3 +234,10 @@ if [ -n "${MGA_API_KEY:-}" ]; then
 else
     echo "MGA_API_KEY not set - skipping claude-code-router model refresh"
 fi
+
+if command -v npx >/dev/null 2>&1; then
+    echo "Installing agent skills (mattpocock/skills)..."
+    npx --yes skills add mattpocock/skills -g --all -y
+else
+    echo "warning: npx not available; skipping agent skills install"
+fi

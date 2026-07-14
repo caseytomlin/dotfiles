@@ -195,5 +195,14 @@ ccr-refresh() {
     # Keep ECA model picker aligned with router models.
     ccr-sync-eca-models || echo "ccr-refresh: warning: could not sync ECA models" >&2
 }
+
+# Update installed agent skills (mattpocock/skills) to their latest versions.
+skills-refresh() {
+    if ! command -v npx >/dev/null 2>&1; then
+        echo "skills-refresh: npx not available" >&2
+        return 1
+    fi
+    npx --yes skills update -g -y
+}
 # Source WSL proxy setup if present.
 [ -f "$HOME/.proxy.sh" ] && . "$HOME/.proxy.sh"
