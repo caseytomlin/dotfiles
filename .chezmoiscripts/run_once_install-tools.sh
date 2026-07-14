@@ -204,6 +204,7 @@ if [ ! -f "$CONFIG" ]; then
         "name": "myGenAssist",
         "api_base_url": "https://chat.int.bayer.com/api/v2/chat/completions",
     "api_key": "${MGA_API_KEY}",
+        "UseBearer": true,
         "models": []
         }
     ],
@@ -223,7 +224,8 @@ if [ -n "${MGA_API_KEY:-}" ]; then
         tmp=$(mktemp)
         jq --argjson models "$(printf '%s\n' "$MODEL_IDS" | jq -R . | jq -s .)" \
            --arg primary "$PRIMARY_MODEL" \
-           '.Providers[0].models = $models | .Router.default = "myGenAssist,\($primary)"' \
+           --arg key "$MGA_API_KEY" \
+           '.Providers[0].models = $models | .Providers[0].api_key = $key | .Providers[0].UseBearer = true | .Router.default = "myGenAssist,\($primary)"' \
            "$CONFIG" > "$tmp"
         mv "$tmp" "$CONFIG"
     else

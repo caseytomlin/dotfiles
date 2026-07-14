@@ -21,6 +21,11 @@ fi
 
 [ -f /etc/profile.d/workspace-dotenv.sh ] && . /etc/profile.d/workspace-dotenv.sh
 
+# Machine-local secrets (e.g. MGA_API_KEY) for non-Codespace machines.
+# Not managed by chezmoi and never committed. In Codespaces this file is
+# absent and the secret comes from the injected Codespace secret instead.
+[ -f "$HOME/.config/dotfiles/secrets.env" ] && . "$HOME/.config/dotfiles/secrets.env"
+
 plugins=(
     fzf
     git
@@ -184,7 +189,7 @@ ccr-refresh() {
     [ -z "$primary_model" ] && primary_model=$(echo "$model_ids" | head -n1)
     local tmp
     tmp=$(mktemp)
-    jq --argjson models "$(echo "$model_ids" | jq -R . | jq -s .)"        --arg primary "$primary_model"        '.Providers[0].models = $models | .Router.default = "myGenAssist,\($primary)"'        "$config" > "$tmp" && mv "$tmp" "$config"
+    jq --argjson models "$(echo "$model_ids" | jq -R . | jq -s .)"        --arg primary "$primary_model"        --arg key "$MGA_API_KEY"        '.Providers[0].models = $models | .Providers[0].api_key = $key | .Providers[0].UseBearer = true | .Router.default = "myGenAssist,\($primary)"'        "$config" > "$tmp" && mv "$tmp" "$config"
     echo "ccr-refresh: $(echo "$model_ids" | wc -l | tr -d ' ') models, default: $primary_model"
 
     # Keep ECA model picker aligned with router models.
