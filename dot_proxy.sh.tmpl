@@ -1,38 +1,93 @@
 {{- if eq .chezmoi.os "linux" -}}
 # ~/.proxy.sh
-# WSL-only proxy setup. Managed by chezmoi.
+# WSL proxy setup (managed by chezmoi).
+#
+# Default is DIRECT: WSL reaches the internet through the Windows NAT, which
+# works both on and off the corporate VPN. The corporate egress proxy
+# (10.185.190.10:8080) is only reachable from the physical office LAN, so we
+# only use it when a direct connection is NOT possible (auto mode) or when
+# requested explicitly via `proxy-on`.
+
+_PROXY_HOST="10.185.190.10:8080"
+_PROXY_PROBE_URL="https://marketplace.cursorapi.com"
+_PROXY_CACHE="${TMPDIR:-/tmp}/.wsl-netmode.$(id -u 2>/dev/null || echo 0)"
+
+_proxy_url() {
+  local user pw
+  user="${USER:-$(id -un 2>/dev/null)}"
+  pw=""
+  if [ -r "$HOME/.ssh/password" ]; then
+    pw="$(cat "$HOME/.ssh/password" 2>/dev/null)"
+  fi
+  if [ -n "$pw" ]; then
+    printf 'http://%s:%s@%s' "$user" "$pw" "$_PROXY_HOST"
+  else
+    printf 'http://%s' "$_PROXY_HOST"
+  fi
+}
+
+_proxy_apply() {
+  local u="$1"
+  export http_proxy="$u" https_proxy="$u" HTTP_PROXY="$u" HTTPS_PROXY="$u"
+  export no_proxy="localhost,127.0.0.1,::1,.cnb,.bayer.cnb,.bayer.biz"
+  export NO_PROXY="$no_proxy"
+}
+
+_proxy_clear() {
+  unset http_proxy https_proxy ftp_proxy all_proxy \
+        HTTP_PROXY HTTPS_PROXY FTP_PROXY ALL_PROXY 2>/dev/null || true
+}
 
 _proxy_info() {
-  printf 'HTTP_PROXY=%s\n' "${HTTP_PROXY:-}"
-  printf 'HTTPS_PROXY=%s\n' "${HTTPS_PROXY:-}"
-  printf 'http_proxy=%s\n' "${http_proxy:-}"
-  printf 'https_proxy=%s\n' "${https_proxy:-}"
+  printf 'http_proxy=%s\n'  "${http_proxy:-<direct>}"
+  printf 'https_proxy=%s\n' "${https_proxy:-<direct>}"
 }
 
-_proxy_off() {
-  unset HTTP_PROXY HTTPS_PROXY http_proxy https_proxy
-}
-
+# Manual overrides.
+setproxy()   { _proxy_apply "$(_proxy_url)"; echo "proxy: on ($_PROXY_HOST)"; }
+unsetproxy() { _proxy_clear; echo "proxy: off (direct)"; }
+proxy_reset_cache() { rm -f "$_PROXY_CACHE" 2>/dev/null || true; }
+alias proxy-on=setproxy
+alias proxy-off=unsetproxy
 alias proxy-info=_proxy_info
-alias proxy-off=_proxy_off
+alias proxy-recheck='proxy_reset_cache; _proxy_auto'
 
-if false && [ -r /proc/version ] && grep -qi microsoft /proc/version && command -v powershell.exe >/dev/null 2>&1; then
-  _proxy_url="$(
-    powershell.exe -NoProfile -NonInteractive -Command '[System.Net.WebRequest]::GetSystemWebProxy().GetProxy("http://google.com").AbsoluteUri' 2>/dev/null \
-      | tr -d '\r' \
-      | head -n 1
-  )"
+# Auto: prefer DIRECT; fall back to the corp proxy only if direct is blocked
+# but the proxy is reachable. Cached briefly so shells start fast.
+_proxy_auto() {
+  # Start clean so any inherited (Windows host-injected) proxy vars do not
+  # leak into WSL tooling.
+  _proxy_clear
 
-  case "$_proxy_url" in
-    http://google.com|http://google.com/) ;;
-    http://*)
-      export HTTP_PROXY="$_proxy_url"
-      export HTTPS_PROXY="$_proxy_url"
-      export http_proxy="$_proxy_url"
-      export https_proxy="$_proxy_url"
-      ;;
-  esac
+  local now ts mode
+  now="$(date +%s 2>/dev/null || echo 0)"
+  mode=""
+  if [ -r "$_PROXY_CACHE" ]; then
+    read -r ts mode 2>/dev/null < "$_PROXY_CACHE" || true
+    if [ -n "${ts:-}" ] && [ -n "${mode:-}" ] && [ $((now - ts)) -lt 300 ]; then
+      [ "$mode" = proxy ] && _proxy_apply "$(_proxy_url)"
+      return 0
+    fi
+    mode=""
+  fi
 
-  unset _proxy_url
-fi
+  if ! command -v curl >/dev/null 2>&1; then
+    mode=direct
+  else
+    if env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY \
+         curl -s -o /dev/null --max-time 2 "$_PROXY_PROBE_URL" >/dev/null 2>&1; then
+      mode=direct
+    elif curl -s -o /dev/null --max-time 2 -x "http://$_PROXY_HOST" "$_PROXY_PROBE_URL" >/dev/null 2>&1; then
+      mode=proxy
+    else
+      mode=direct
+    fi
+  fi
+
+  printf '%s %s\n' "$now" "$mode" > "$_PROXY_CACHE" 2>/dev/null || true
+  [ "$mode" = proxy ] && _proxy_apply "$(_proxy_url)"
+  return 0
+}
+
+_proxy_auto
 {{- end }}

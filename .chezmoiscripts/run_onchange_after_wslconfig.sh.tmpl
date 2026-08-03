@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# Writes %USERPROFILE%\.wslconfig from WSL.
+# WSL's default autoProxy=true injects Windows PAC proxies (e.g. 163.116.128.80:80)
+# into every Linux process; that address is unreachable from WSL and breaks
+# Cursor extension installs, curl, MCP, etc. Proxy selection stays in ~/.proxy.sh.
+set -euo pipefail
+
+{{- if ne .chezmoi.os "linux" }}
+exit 0
+{{- end }}
+
+if ! grep -qi microsoft /proc/version 2>/dev/null; then
+  exit 0
+fi
+
+if ! command -v powershell.exe >/dev/null 2>&1; then
+  echo "wslconfig: powershell.exe not available; skipping" >&2
+  exit 0
+fi
+
+win_home="$(powershell.exe -NoProfile -NonInteractive -Command 'Write-Output $env:USERPROFILE' 2>/dev/null | tr -d '\r')"
+if [ -z "${win_home}" ]; then
+  echo "wslconfig: could not resolve Windows USERPROFILE; skipping" >&2
+  exit 0
+fi
+
+if ! command -v wslpath >/dev/null 2>&1; then
+  echo "wslconfig: wslpath not available; skipping" >&2
+  exit 0
+fi
+
+dest="$(wslpath "${win_home}")/.wslconfig"
+
+cat > "${dest}" <<'EOF'
+[wsl2]
+# WSL mirrors the Windows PAC-derived proxy into every Linux process
+# (HTTP_PROXY / http_proxy / WSL_PAC_URL). Here that resolves to
+# 163.116.128.80:80, which is only routable from Windows and never from WSL,
+# so anything in WSL that honours the proxy env hangs until it times out
+# (Cursor server extension downloads, curl, MCP).
+# Proxy selection for WSL is handled per-shell by ~/.proxy.sh instead, which
+# probes direct first and only falls back to the corporate proxy when needed.
+autoProxy=false
+EOF
+
+echo "wslconfig: wrote ${dest}"
