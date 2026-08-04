@@ -19,7 +19,7 @@ if (Get-Command winget -ErrorAction SilentlyContinue) {
   Ensure-WingetPackage -Id 'astral-sh.uv' -Name 'uv'
   Ensure-WingetPackage -Id 'Amazon.AWSCLI' -Name 'aws'
   Ensure-WingetPackage -Id 'OpenJS.NodeJS.LTS' -Name 'node'
-  Ensure-WingetPackage -Id 'Junegunn.fzf' -Name 'fzf'
+  Ensure-WingetPackage -Id 'junegunn.fzf' -Name 'fzf'
   Ensure-WingetPackage -Id 'Git.Git' -Name 'git'
 } else {
   Write-Host "warning: winget not available; skipping package installs"
