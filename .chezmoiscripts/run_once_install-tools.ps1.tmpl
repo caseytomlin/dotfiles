@@ -2,6 +2,22 @@
 $ErrorActionPreference = 'Continue'
 Write-Host "Installing Windows tools via winget (idempotent)..."
 
+function Refresh-SessionPath {
+  $env:Path = [System.Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' +
+              [System.Environment]::GetEnvironmentVariable('Path', 'User')
+  foreach ($p in @(
+      "$env:ProgramFiles\nodejs",
+      "${env:ProgramFiles(x86)}\nodejs",
+      "$env:LOCALAPPDATA\Programs\nodejs",
+      "$env:ProgramFiles\Git\cmd",
+      "$env:LOCALAPPDATA\Programs\Git\cmd"
+    )) {
+    if ((Test-Path $p) -and ($env:Path -notlike "*$p*")) {
+      $env:Path = "$p;$env:Path"
+    }
+  }
+}
+
 function Ensure-WingetPackage {
   param([string]$Id, [string]$Name = $Id)
   $found = winget list --id $Id -e 2>$null | Select-String -SimpleMatch $Id
@@ -24,6 +40,8 @@ if (Get-Command winget -ErrorAction SilentlyContinue) {
 } else {
   Write-Host "warning: winget not available; skipping package installs"
 }
+
+Refresh-SessionPath
 
 if (Get-Command npm -ErrorAction SilentlyContinue) {
   npm install -g --no-audit --no-fund --loglevel=error @anthropic-ai/claude-code 2>$null
