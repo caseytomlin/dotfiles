@@ -47,3 +47,9 @@ scriptTempDir = "~/tmp"
 
 [diff]
     exclude = ["scripts"]
+
+{{- if eq .chezmoi.os "windows" }}
+[interpreters.ps1]
+    command = "powershell"
+    args = ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File"]
+{{- end }}

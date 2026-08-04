@@ -17,7 +17,8 @@ Apply this repo with chezmoi on **each** environment (Windows native, WSL, nativ
 |---------|-----------|
 | VS Code Insiders settings | Shared body in `.chezmoitemplates/vscode-insiders-settings.json`; Windows → `AppData/Roaming/...`, Linux → `~/.config/...` via `.chezmoiignore` |
 | `~/.zshrc`, `~/.proxy.sh` | Ignored on Windows |
-| Package bootstrap | `run_once_install-tools.sh.tmpl` — winget on Windows, apt/nvm on Linux |
+| Package bootstrap | `run_once_install-tools.sh.tmpl` (Linux) + `run_once_install-tools.ps1.tmpl` (Windows). Empty template on the wrong OS ⇒ skipped |
+| Git remote / SSH helper | Same split: `.sh.tmpl` on Linux, `.ps1.tmpl` on Windows |
 | zsh plugins / vscode-remote MCP | Linux-only scripts (empty template ⇒ skipped) |
 | `%USERPROFILE%\.wslconfig` | WSL-only `run_onchange_after_*` script writing the **Windows host** file (outside WSL dest) |
 

@@ -1,0 +1,38 @@
+{{- if eq .chezmoi.os "windows" -}}
+$ErrorActionPreference = 'Continue'
+
+$sshDir = Join-Path $HOME '.ssh'
+$idRsa = Join-Path $sshDir 'id_rsa'
+$idEd = Join-Path $sshDir 'id_ed25519'
+
+function Prefer-GitHubSSH {
+  if ($env:PREFER_GITHUB_SSH -eq 'yes') { return $true }
+  if ($env:GH_ID_RSA) { return $true }
+  if (Test-Path $idRsa) { return $true }
+  if (Test-Path $idEd) { return $true }
+  return $false
+}
+
+if (Test-Path $idRsa) {
+  Write-Host 'SSH private key already exists'
+} elseif ($env:GH_ID_RSA) {
+  Write-Host 'Adding SSH private key from GH_ID_RSA'
+  New-Item -ItemType Directory -Force -Path $sshDir | Out-Null
+  Set-Content -Path $idRsa -Value $env:GH_ID_RSA -NoNewline
+} else {
+  Write-Host 'GH_ID_RSA not set - skipping SSH key setup'
+}
+
+if (-not $env:CODESPACES) {
+  if (Prefer-GitHubSSH) {
+    if (Get-Command git -ErrorAction SilentlyContinue) {
+      Write-Host 'Configuring git to prefer SSH for GitHub'
+      git config --global url."git@github.com:".insteadOf "https://github.com/"
+    } else {
+      Write-Host 'git not on PATH; skipping GitHub SSH rewrite'
+    }
+  } else {
+    Write-Host 'Skipping GitHub SSH rewrite; HTTPS remains the default'
+  }
+}
+{{- end -}}

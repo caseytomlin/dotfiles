@@ -1,3 +1,4 @@
+{{- if eq .chezmoi.os "linux" -}}
 #!/usr/bin/env bash
 
 set -eu
@@ -29,7 +30,6 @@ if [ -f "$ID_RSA_FILENAME" ]; then
     echo "SSH private key already exists"
 else
     echo "SSH private key not found"
-    # Only add SSH key if GH_ID_RSA is provided
     if [ -n "${GH_ID_RSA:-}" ]; then
         echo "Adding SSH private key from GH_ID_RSA"
         mkdir -p "$SSH_DIR"
@@ -51,3 +51,4 @@ if [ -z "${CODESPACES:-}" ]; then
 fi
 
 exit 0
+{{- end -}}

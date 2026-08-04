@@ -1,43 +1,4 @@
-{{- if eq .chezmoi.os "windows" -}}
-#!/usr/bin/env pwsh
-$ErrorActionPreference = 'Continue'
-Write-Host "Installing Windows tools via winget (idempotent)..."
-
-function Ensure-WingetPackage {
-  param([string]$Id, [string]$Name = $Id)
-  $found = winget list --id $Id -e 2>$null | Select-String -SimpleMatch $Id
-  if ($found) {
-    Write-Host "$Name already installed"
-    return
-  }
-  Write-Host "Installing $Name ($Id)..."
-  winget install --id $Id -e --accept-package-agreements --accept-source-agreements
-}
-
-if (Get-Command winget -ErrorAction SilentlyContinue) {
-  Ensure-WingetPackage -Id 'Starship.Starship' -Name 'starship'
-  Ensure-WingetPackage -Id 'jqlang.jq' -Name 'jq'
-  Ensure-WingetPackage -Id 'astral-sh.uv' -Name 'uv'
-  Ensure-WingetPackage -Id 'Amazon.AWSCLI' -Name 'aws'
-  Ensure-WingetPackage -Id 'OpenJS.NodeJS.LTS' -Name 'node'
-  Ensure-WingetPackage -Id 'Junegunn.fzf' -Name 'fzf'
-} else {
-  Write-Host "warning: winget not available; skipping package installs"
-}
-
-if (Get-Command npm -ErrorAction SilentlyContinue) {
-  npm install -g --no-audit --no-fund --loglevel=error @anthropic-ai/claude-code 2>$null
-  npm install -g --no-audit --no-fund --loglevel=error @musistudio/claude-code-router 2>$null
-  if (Get-Command npx -ErrorAction SilentlyContinue) {
-    Write-Host "Installing agent skills (mattpocock/skills)..."
-    npx --yes skills add mattpocock/skills -g --all -y
-  }
-} else {
-  Write-Host "warning: npm not available; skipping node global tools"
-}
-
-Write-Host "Windows tool bootstrap done."
-{{- else if eq .chezmoi.os "linux" -}}
+{{- if eq .chezmoi.os "linux" -}}
 #!/usr/bin/env bash
 
 set -euo pipefail
