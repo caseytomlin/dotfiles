@@ -24,7 +24,11 @@
 {{- end -}}
 
 sourceDir = {{ .chezmoi.sourceDir | quote }}
+{{- if eq .chezmoi.os "windows" }}
+scriptTempDir = {{ printf "%s/tmp" .chezmoi.homeDir | quote }}
+{{- else }}
 scriptTempDir = "~/tmp"
+{{- end }}
 
 [data]
     name = {{ $name | quote }}
@@ -33,5 +37,13 @@ scriptTempDir = "~/tmp"
 [git]
     autoCommit = true
     autoPush = true
+
 [cd]
+{{- if eq .chezmoi.os "windows" }}
+    command = "powershell"
+{{- else }}
     command = "zsh"
+{{- end }}
+
+[diff]
+    exclude = ["scripts"]

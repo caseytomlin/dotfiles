@@ -1,3 +1,43 @@
+{{- if eq .chezmoi.os "windows" -}}
+#!/usr/bin/env pwsh
+$ErrorActionPreference = 'Continue'
+Write-Host "Installing Windows tools via winget (idempotent)..."
+
+function Ensure-WingetPackage {
+  param([string]$Id, [string]$Name = $Id)
+  $found = winget list --id $Id -e 2>$null | Select-String -SimpleMatch $Id
+  if ($found) {
+    Write-Host "$Name already installed"
+    return
+  }
+  Write-Host "Installing $Name ($Id)..."
+  winget install --id $Id -e --accept-package-agreements --accept-source-agreements
+}
+
+if (Get-Command winget -ErrorAction SilentlyContinue) {
+  Ensure-WingetPackage -Id 'Starship.Starship' -Name 'starship'
+  Ensure-WingetPackage -Id 'jqlang.jq' -Name 'jq'
+  Ensure-WingetPackage -Id 'astral-sh.uv' -Name 'uv'
+  Ensure-WingetPackage -Id 'Amazon.AWSCLI' -Name 'aws'
+  Ensure-WingetPackage -Id 'OpenJS.NodeJS.LTS' -Name 'node'
+  Ensure-WingetPackage -Id 'Junegunn.fzf' -Name 'fzf'
+} else {
+  Write-Host "warning: winget not available; skipping package installs"
+}
+
+if (Get-Command npm -ErrorAction SilentlyContinue) {
+  npm install -g --no-audit --no-fund --loglevel=error @anthropic-ai/claude-code 2>$null
+  npm install -g --no-audit --no-fund --loglevel=error @musistudio/claude-code-router 2>$null
+  if (Get-Command npx -ErrorAction SilentlyContinue) {
+    Write-Host "Installing agent skills (mattpocock/skills)..."
+    npx --yes skills add mattpocock/skills -g --all -y
+  }
+} else {
+  Write-Host "warning: npm not available; skipping node global tools"
+}
+
+Write-Host "Windows tool bootstrap done."
+{{- else if eq .chezmoi.os "linux" -}}
 #!/usr/bin/env bash
 
 set -euo pipefail
@@ -127,20 +167,20 @@ else
     curl --proto '=https' --tlsv1.2 -LsSf https://setup.atuin.sh | sh -s -- --non-interactive
 fi
 
-if  command -v pipx >/dev/null 2>&1; then 
+if  command -v pipx >/dev/null 2>&1; then
     echo "pipx already installed"
 else
     s install pipx
     pipx ensurepath
 fi
 
-if  command -v just >/dev/null 2>&1; then 
+if  command -v just >/dev/null 2>&1; then
     echo "just already installed"
 else
     pipx install rust-just
 fi
 
-if  command -v fzf >/dev/null 2>&1; then 
+if  command -v fzf >/dev/null 2>&1; then
     echo "fzf already installed"
 else
     s install fzf
@@ -152,13 +192,13 @@ else
     s install -y jq
 fi
 
-if  command -v uv >/dev/null 2>&1; then 
+if  command -v uv >/dev/null 2>&1; then
     echo "uv already installed"
 else
     curl -LsSf https://astral.sh/uv/install.sh | sudo sh
 fi
 
-if  command -v aws >/dev/null 2>&1; then 
+if  command -v aws >/dev/null 2>&1; then
     echo "aws already installed"
 else
     curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
@@ -166,7 +206,7 @@ else
     sudo ./aws/install
 fi
 
-if  command -v starship >/dev/null 2>&1; then 
+if  command -v starship >/dev/null 2>&1; then
     echo "starship already installed"
 else
     curl -fsSL https://starship.rs/install.sh | sudo sh -s -- -y
@@ -176,22 +216,12 @@ ensure_nvm_and_node
 
 ensure_user_npm_prefix
 
-# if command -v opencode >/dev/null 2>&1; then
-#     echo "OpenCode CLI already installed"
-# else
-#     curl -fsSL https://opencode.ai/install.sh | bash
-# fi
-
 if command -v ccr >/dev/null 2>&1 && ccr --version >/dev/null 2>&1; then
     echo "claude code router already installed"
 else
-    # Install Claude Code globally
     npm install -g --no-audit --no-fund --loglevel=error @anthropic-ai/claude-code
-
-    # Install Claude Code Router for myGenAssist integration
     npm install -g --no-audit --no-fund --loglevel=error @musistudio/claude-code-router
 fi
-
 
 CONFIG_DIR="$HOME/.claude-code-router"
 CONFIG="$CONFIG_DIR/config.json"
@@ -241,3 +271,4 @@ if command -v npx >/dev/null 2>&1; then
 else
     echo "warning: npx not available; skipping agent skills install"
 fi
+{{- end -}}

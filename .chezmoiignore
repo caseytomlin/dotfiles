@@ -1,4 +1,25 @@
+# Repo / bootstrap files that are not home-directory targets
 .github/
 install.sh
 LICENSE
-README.md.claude-code-router/config.json
+README.md
+MULTI_OS.md
+.claude-code-router/config.json
+
+# Shared template bodies live under .chezmoitemplates (never targets)
+
+# Windows AppData (real Roaming path). Ignore on non-Windows.
+{{- if ne .chezmoi.os "windows" }}
+AppData/**
+{{- end }}
+
+# Linux/macOS VS Code Insiders under ~/.config — skip on Windows (use AppData instead).
+{{- if eq .chezmoi.os "windows" }}
+.config/Code - Insiders/**
+{{- end }}
+
+# Shell/proxy are Unix-oriented.
+{{- if eq .chezmoi.os "windows" }}
+.proxy.sh
+.zshrc
+{{- end }}

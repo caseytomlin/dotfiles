@@ -1,3 +1,4 @@
+{{- if eq .chezmoi.os "linux" -}}
 #!/bin/sh
 # run_once: sets up VS Code Remote machine-level MCP server definitions.
 # Using plain "npx" (no absolute path) avoids breakage when the Node version
@@ -26,3 +27,4 @@ EOF
 else
   echo "${MCP_FILE} already exists, skipping."
 fi
+{{- end -}}

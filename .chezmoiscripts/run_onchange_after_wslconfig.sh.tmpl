@@ -1,17 +1,12 @@
+{{- /* Host-only: writes %USERPROFILE%\.wslconfig from WSL. Empty ⇒ skip on non-WSL. */ -}}
+{{- if eq .chezmoi.os "linux" -}}
+{{-   if (.chezmoi.kernel.osrelease | lower | contains "microsoft") -}}
 #!/usr/bin/env bash
 # Writes %USERPROFILE%\.wslconfig from WSL.
-# WSL's default autoProxy=true injects Windows PAC proxies (e.g. 163.116.128.80:80)
-# into every Linux process; that address is unreachable from WSL and breaks
-# Cursor extension installs, curl, MCP, etc. Proxy selection stays in ~/.proxy.sh.
+# WSL's default autoProxy=true injects Windows PAC proxies into every Linux
+# process; that address is often unreachable from WSL and breaks Cursor
+# extension installs, curl, MCP, etc. Proxy selection stays in ~/.proxy.sh.
 set -euo pipefail
-
-{{- if ne .chezmoi.os "linux" }}
-exit 0
-{{- end }}
-
-if ! grep -qi microsoft /proc/version 2>/dev/null; then
-  exit 0
-fi
 
 if ! command -v powershell.exe >/dev/null 2>&1; then
   echo "wslconfig: powershell.exe not available; skipping" >&2
@@ -44,3 +39,5 @@ autoProxy=false
 EOF
 
 echo "wslconfig: wrote ${dest}"
+{{-   end -}}
+{{- end -}}
