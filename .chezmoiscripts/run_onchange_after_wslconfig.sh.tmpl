@@ -36,6 +36,11 @@ cat > "${dest}" <<'EOF'
 # Proxy selection for WSL is handled per-shell by ~/.proxy.sh instead, which
 # probes direct first and only falls back to the corporate proxy when needed.
 autoProxy=false
+
+# Mirrored networking: WSL can reach Windows localhost (e.g. px on :3128).
+# Requires Windows 11 22H2+; apply with: wsl --shutdown
+networkingMode=mirrored
+dnsTunneling=true
 EOF
 
 echo "wslconfig: wrote ${dest}"

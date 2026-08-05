@@ -1,0 +1,38 @@
+{{- /* Windows-only: write PATH-sync profile into MyDocuments (OneDrive-aware). */ -}}
+{{- if eq .chezmoi.os "windows" -}}
+$ErrorActionPreference = 'Stop'
+
+$profileBody = @'
+{{ includeTemplate "powershell-path-profile.ps1" . | trim }}
+'@
+
+function Write-PathProfile {
+  param(
+    [Parameter(Mandatory = $true)][string]$Directory,
+    [Parameter(Mandatory = $true)][string]$FileName
+  )
+  New-Item -ItemType Directory -Force -Path $Directory | Out-Null
+  $path = Join-Path $Directory $FileName
+  # UTF-8 without BOM keeps PS 5.1 happy for simple scripts
+  [System.IO.File]::WriteAllText($path, $profileBody.TrimEnd() + [Environment]::NewLine)
+  Write-Host "Wrote $path"
+}
+
+# Windows PowerShell 5.1 — MyDocuments may be OneDrive "Personal Data"
+$myDocs = [Environment]::GetFolderPath('MyDocuments')
+Write-PathProfile -Directory (Join-Path $myDocs 'WindowsPowerShell') -FileName 'profile.ps1'
+
+$hostSpecific = Join-Path $myDocs 'WindowsPowerShell\Microsoft.PowerShell_profile.ps1'
+if (-not (Test-Path $hostSpecific)) {
+  [System.IO.File]::WriteAllText(
+    $hostSpecific,
+    "# Host-specific profile — PATH sync lives in profile.ps1 (CurrentUserAllHosts).`r`n"
+  )
+  Write-Host "Wrote $hostSpecific"
+}
+
+# PowerShell 7+ default location (also under MyDocuments when redirected)
+Write-PathProfile -Directory (Join-Path $myDocs 'PowerShell') -FileName 'profile.ps1'
+
+Write-Host "PowerShell PATH-sync profiles updated."
+{{- end -}}

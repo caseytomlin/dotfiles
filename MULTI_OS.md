@@ -18,9 +18,10 @@ Apply this repo with chezmoi on **each** environment (Windows native, WSL, nativ
 | VS Code Insiders settings | Shared body in `.chezmoitemplates/vscode-insiders-settings.json`; Windows → `AppData/Roaming/...`, Linux → `~/.config/...` via `.chezmoiignore` |
 | `~/.zshrc`, `~/.proxy.sh` | Ignored on Windows |
 | Package bootstrap | `run_once_install-tools.sh.tmpl` (Linux) + `run_once_install-tools.ps1.tmpl` (Windows). Empty template on the wrong OS ⇒ skipped |
+| PowerShell PATH (Windows) | `run_onchange_after_powershell-path.ps1.tmpl` writes PATH-sync `profile.ps1` under **MyDocuments** (`WindowsPowerShell` + `PowerShell`) so WSL-launched and native PS see the same User/Machine PATH (uv, chezmoi, WinGet shims). Body: `.chezmoitemplates/powershell-path-profile.ps1` |
 | Git remote / SSH helper | Same split: `.sh.tmpl` on Linux, `.ps1.tmpl` on Windows |
 | zsh plugins / vscode-remote MCP | Linux-only scripts (empty template ⇒ skipped) |
-| `%USERPROFILE%\.wslconfig` | WSL-only `run_onchange_after_*` script writing the **Windows host** file (outside WSL dest) |
+| `%USERPROFILE%\.wslconfig` | WSL-only `run_onchange_after_*` script writing the **Windows host** file (outside WSL dest); keeps `autoProxy=false` + mirrored networking |
 
 ## WSL detection (templates)
 
