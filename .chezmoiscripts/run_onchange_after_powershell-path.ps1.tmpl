@@ -18,16 +18,14 @@ function Write-PathProfile {
   Write-Host "Wrote $path"
 }
 
-# Windows PowerShell 5.1 — MyDocuments may be OneDrive "Personal Data"
+# Windows PowerShell 5.1 -- MyDocuments may be OneDrive "Personal Data"
 $myDocs = [Environment]::GetFolderPath('MyDocuments')
 Write-PathProfile -Directory (Join-Path $myDocs 'WindowsPowerShell') -FileName 'profile.ps1'
 
 $hostSpecific = Join-Path $myDocs 'WindowsPowerShell\Microsoft.PowerShell_profile.ps1'
 if (-not (Test-Path $hostSpecific)) {
-  [System.IO.File]::WriteAllText(
-    $hostSpecific,
-    "# Host-specific profile — PATH sync lives in profile.ps1 (CurrentUserAllHosts).`r`n"
-  )
+  $hostBody = '# Host-specific profile -- PATH sync lives in profile.ps1 (CurrentUserAllHosts).' + [Environment]::NewLine
+  [System.IO.File]::WriteAllText($hostSpecific, $hostBody)
   Write-Host "Wrote $hostSpecific"
 }
 
