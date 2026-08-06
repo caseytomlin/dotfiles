@@ -1,17 +1,318 @@
 {
+  "json.schemas": [
+    {
+      "fileMatch": [
+        "~/.config/opencode/opencode.json"
+      ],
+      "url": "https://opencode.ai/config.json"
+    }
+  ],
+
+  "terminal.integrated.defaultProfile.linux": "zsh",
+  "terminal.integrated.profiles.windows": {
+    "WSL zsh": {
+      "path": "C:\\Windows\\System32\\wsl.exe",
+      "args": ["-d", "Ubuntu", "--exec", "zsh", "-l"]
+    },
+    "Ubuntu (WSL)": {
+      "path": "C:\\Windows\\System32\\wsl.exe",
+      "args": ["-d", "Ubuntu", "--exec", "zsh", "-l"]
+    },
+    "Git Bash": null,
+    "Git Bash (User)": null
+  },
+  "terminal.integrated.defaultProfile.windows": "WSL zsh",
+  "terminal.integrated.automationProfile.windows": {
+    "path": "C:\\Windows\\System32\\wsl.exe",
+    "args": ["-d", "Ubuntu", "--exec", "zsh", "-l"]
+  },
+  "terminal.integrated.profiles.linux": {
+    "zsh": {
+      "path": "zsh",
+      "args": ["-l"]
+    }
+  },
+  "terminal.integrated.automationProfile.linux": {
+    "path": "zsh",
+    "args": ["-l"]
+  },
+  "terminal.integrated.enablePersistentSessions": false,
+  "terminal.integrated.persistentSessionReviveProcess": "never",
+  "terminal.integrated.enableMultiLinePasteWarning": "never",
+  "terminal.integrated.initialHint": false,
+
+  "chat.mcp.autostart": "newAndOutdated",
+  "chat.agent.maxRequests": 999,
+  "chat.tools.terminal.outputLocation": "chat",
+  "chat.viewSessions.orientation": "stacked",
+  "chat.mcp.serverSampling": {
+    "Global in Code - Insiders: microsoft/playwright-mcp": {
+      "allowedModels": [
+        "copilot/gpt-4.1",
+        "copilot/gpt-5-codex"
+      ]
+    }
+  },
+  "chat.tools.terminal.autoApprove": {
+    "export": true,
+    "uv": true,
+    "source .venv/bin/activate && databricks-connect --version": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "help(efds_fcpf_pipes.Task.__init__)\"": true,
+    "print(Task.__doc__)": true,
+    "import": true,
+    "print(inspect.signature(Task.__init__))\"": true,
+    "print(inspect.signature(ComputeResources.__init__))\"": true,
+    "UV_INDEX_PASSWORD=test": true,
+    "print('\\n'.join(sys.path))\"": true,
+    "...": true
+  },
+  "chat.tools.urls.autoApprove": {
+    "https://docs.astral.sh": {
+      "approveRequest": false,
+      "approveResponse": true
+    },
+    "https://github.com": {
+      "approveRequest": false,
+      "approveResponse": true
+    },
+    "https://raw.githubusercontent.com/amazon-science/chronos-forecasting/main/notebooks/chronos-2-quickstart.ipynb": {
+      "approveRequest": false,
+      "approveResponse": true
+    },
+    "https://raw.githubusercontent.com": {
+      "approveRequest": false,
+      "approveResponse": true
+    },
+    "https://www.google.com": {
+      "approveRequest": false,
+      "approveResponse": true
+    },
+    "https://r.jina.ai/https://www.google.com/search?q=polars+DataFrame+documentation": {
+      "approveRequest": true,
+      "approveResponse": false
+    },
+    "https://r.jina.ai": {
+      "approveRequest": false,
+      "approveResponse": true
+    },
+    "https://just.systems": {
+      "approveRequest": false,
+      "approveResponse": true
+    },
+    "https://docs.pola.rs": {
+      "approveRequest": false,
+      "approveResponse": true
+    },
+    "https://pola-rs.github.io": {
+      "approveRequest": true,
+      "approveResponse": false
+    },
+    "https://learn.microsoft.com": {
+      "approveRequest": false,
+      "approveResponse": true
+    },
+    "https://api.github.com": {
+      "approveRequest": false,
+      "approveResponse": true
+    },
+    "https://docs.github.com": true,
+    "https://docs.github.com/en/copilot/how-tos/configure-custom-instructions/add-repository-instructions": true,
+    "https://docs.github.com/en/copilot/how-tos/configure-custom-instructions": true,
+    "https://docs.github.com/en/copilot/how-tos": true,
+    "https://docs.github.com/en/copilot": true,
+    "https://docs.github.com/en": true,
+    "https://*.github.com": true,
+    "https://docs.anthropic.com/en/docs/claude-code/memory": true,
+    "https://docs.anthropic.com/en/docs/claude-code": true,
+    "https://docs.anthropic.com/en/docs": true,
+    "https://docs.anthropic.com/en": true,
+    "https://docs.anthropic.com": true,
+    "https://*.anthropic.com": true,
+    "https://opencode.ai/docs/agents": true,
+    "https://opencode.ai/docs": true,
+    "https://opencode.ai": true,
+    "https://code.claude.com/docs/en/memory": true,
+    "https://code.claude.com/docs/en": true,
+    "https://code.claude.com/docs": true,
+    "https://code.claude.com": true,
+    "https://*.claude.com": true,
+    "https://opencode.ai/docs/skills": true,
+    "https://aka.ms": {
+      "approveRequest": false,
+      "approveResponse": true
+    }
+  },
+  "claudeCode.preferredLocation": "panel",
+
+  "github.copilot.nextEditSuggestions.enabled": true,
+  "githubPullRequests.pullBranch": "never",
+  "githubPullRequests.pushBranch": "always",
+  "git.autofetch": true,
+  "git.blame.editorDecoration.enabled": true,
+
+  "files.autoSave": "afterDelay",
+  "diffEditor.maxComputationTime": 0,
+  "remote.autoForwardPortsSource": "hybrid",
+  "redhat.telemetry.enabled": false,
+  "security.allowedUNCHosts": [
+    "wsl.localhost"
+  ],
+
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff"
+  },
+  "[dockercompose]": {
+    "editor.insertSpaces": true,
+    "editor.tabSize": 2,
+    "editor.autoIndent": "advanced",
+    "editor.defaultFormatter": "redhat.vscode-yaml"
+  },
+  "[github-actions-workflow]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml"
+  },
+  "python.terminal.activateEnvironment": false,
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}",
+    "${workspaceFolder}/src"
+  ],
+
+  "workbench.colorTheme": "Dark Modern",
+
+  "accessibility.signals.lineHasBreakpoint": {
+    "sound": "off",
+    "announcement": "auto"
+  },
+  "accessibility.signals.chatEditModifiedFile": {
+    "sound": "off"
+  },
+  "accessibility.signals.chatRequestSent": {
+    "sound": "off",
+    "announcement": "auto"
+  },
+  "accessibility.signals.chatResponseReceived": {
+    "sound": "off"
+  },
+  "accessibility.signals.chatUserActionRequired": {
+    "sound": "off",
+    "announcement": "auto"
+  },
+  "accessibility.signals.clear": {
+    "sound": "off",
+    "announcement": "auto"
+  },
+  "accessibility.signals.codeActionApplied": {
+    "sound": "off"
+  },
+  "accessibility.signals.codeActionTriggered": {
+    "sound": "off"
+  },
+  "accessibility.signals.onDebugBreak": {
+    "sound": "off",
+    "announcement": "auto"
+  },
+  "accessibility.signals.diffLineDeleted": {
+    "sound": "off"
+  },
+  "accessibility.signals.diffLineInserted": {
+    "sound": "off"
+  },
+  "accessibility.signals.diffLineModified": {
+    "sound": "off"
+  },
+  "accessibility.signals.editsKept": {
+    "sound": "off",
+    "announcement": "auto"
+  },
+  "accessibility.signals.editsUndone": {
+    "sound": "off",
+    "announcement": "auto"
+  },
+  "accessibility.signals.positionHasError": {
+    "sound": "off",
+    "announcement": "auto"
+  },
+  "accessibility.signals.positionHasWarning": {
+    "sound": "off",
+    "announcement": "auto"
+  },
+  "accessibility.signals.lineHasError": {
+    "sound": "off",
+    "announcement": "auto"
+  },
+  "accessibility.signals.lineHasWarning": {
+    "sound": "off",
+    "announcement": "auto"
+  },
+  "accessibility.signals.lineHasFoldedArea": {
+    "sound": "off",
+    "announcement": "auto"
+  },
+  "accessibility.signals.lineHasInlineSuggestion": {
+    "sound": "off"
+  },
+  "accessibility.signals.nextEditSuggestion": {
+    "sound": "off",
+    "announcement": "auto"
+  },
+  "accessibility.signals.noInlayHints": {
+    "sound": "off",
+    "announcement": "auto"
+  },
+  "accessibility.signals.notebookCellCompleted": {
+    "sound": "off",
+    "announcement": "auto"
+  },
+  "accessibility.signals.notebookCellFailed": {
+    "sound": "off",
+    "announcement": "auto"
+  },
+  "accessibility.signals.progress": {
+    "sound": "off",
+    "announcement": "auto"
+  },
+  "accessibility.signals.taskCompleted": {
+    "sound": "off",
+    "announcement": "auto"
+  },
+  "accessibility.signals.taskFailed": {
+    "sound": "off",
+    "announcement": "auto"
+  },
+  "accessibility.signals.terminalBell": {
+    "sound": "off",
+    "announcement": "auto"
+  },
+  "accessibility.signals.terminalCommandFailed": {
+    "sound": "off",
+    "announcement": "auto"
+  },
+  "accessibility.signals.terminalCommandSucceeded": {
+    "sound": "off",
+    "announcement": "auto"
+  },
+  "accessibility.signals.terminalQuickFix": {
+    "sound": "off",
+    "announcement": "auto"
+  },
+  "accessibility.signals.voiceRecordingStopped": {
+    "sound": "on"
+  },
+
+  "editor.accessibilitySupport": "on",
   "accessibility.voice.enabled": true,
   "accessibility.voice.speechLanguage": "en-US",
   "accessibility.voice.codeActionProposalMenuLocation": "statusBar",
   "accessibility.voice.voiceCommands": true,
   "accessibility.voice.wordSeparators": "-",
-  "editor.accessibilitySupport": "on",
   "accessibility.voice.autoSynthesizeSpeechOnTerminalOpen": false,
-  "python.terminal.activateEnvironment": false,
-  "workbench.colorTheme": "Dark Modern",
 
   // Netskope publishes a PAC whose catch-all proxy (163.116.128.80:80) is only
   // intermittently routable, and its TLS interception cert cannot be revocation
   // checked. Ignore the system proxy and don't hard-fail on that cert.
   "http.proxySupport": "off",
-  "http.proxyStrictSSL": false
+  "http.proxyStrictSSL": false,
+  "github-authentication.useElectronFetch": false
 }
