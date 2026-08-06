@@ -6,5 +6,11 @@
   "accessibility.voice.wordSeparators": "-",
   "editor.accessibilitySupport": "on",
   "accessibility.voice.autoSynthesizeSpeechOnTerminalOpen": false,
-  "python.terminal.activateEnvironment": false
+  "python.terminal.activateEnvironment": false,
+
+  // Netskope publishes a PAC whose catch-all proxy (163.116.128.80:80) is only
+  // intermittently routable, and its TLS interception cert cannot be revocation
+  // checked. Ignore the system proxy and don't hard-fail on that cert.
+  "http.proxySupport": "off",
+  "http.proxyStrictSSL": false
 }
