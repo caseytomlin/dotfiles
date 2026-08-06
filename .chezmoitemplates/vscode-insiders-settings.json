@@ -7,6 +7,7 @@
   "editor.accessibilitySupport": "on",
   "accessibility.voice.autoSynthesizeSpeechOnTerminalOpen": false,
   "python.terminal.activateEnvironment": false,
+  "workbench.colorTheme": "Dark Modern",
 
   // Netskope publishes a PAC whose catch-all proxy (163.116.128.80:80) is only
   // intermittently routable, and its TLS interception cert cannot be revocation
