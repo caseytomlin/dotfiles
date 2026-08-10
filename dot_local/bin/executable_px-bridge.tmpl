@@ -1,0 +1,83 @@
+{{- if eq .chezmoi.os "linux" -}}
+{{-   if (.chezmoi.kernel.osrelease | lower | contains "microsoft") -}}
+#!/usr/bin/env bash
+# Start Windows px NTLM bridge (:3128) from WSL, then recheck proxy.
+# Uses a temp .ps1 + powershell -File (WSL cannot reliably pass multiline -Command).
+set -euo pipefail
+if ! command -v powershell.exe >/dev/null 2>&1; then
+  echo "px-bridge: powershell.exe not available" >&2
+  exit 1
+fi
+
+_ps1="$(mktemp /tmp/px-bridge.XXXXXX.ps1)"
+cleanup() { rm -f "$_ps1"; }
+trap cleanup EXIT
+
+# Write CRLF-friendly script without bash/PowerShell here-string collisions.
+cat > "$_ps1" <<'PSEOF'
+$ErrorActionPreference = "Continue"
+$env:Path = [Environment]::GetEnvironmentVariable("Path","Machine") + ";" +
+            [Environment]::GetEnvironmentVariable("Path","User")
+$profiles = @(
+  $PROFILE.CurrentUserAllHosts,
+  $PROFILE.CurrentUserCurrentHost,
+  (Join-Path $HOME "Documents\PowerShell\profile.ps1"),
+  (Join-Path $HOME "Documents\WindowsPowerShell\profile.ps1")
+) | Select-Object -Unique
+foreach ($p in $profiles) {
+  if ($p -and (Test-Path -LiteralPath $p)) { . $p }
+}
+function Test-LocalPx {
+  try {
+    $c = New-Object System.Net.Sockets.TcpClient
+    $iar = $c.BeginConnect("127.0.0.1", 3128, $null, $null)
+    $ok = $iar.AsyncWaitHandle.WaitOne(400)
+    if ($ok -and $c.Connected) { $c.Close(); return $true }
+    $c.Close()
+  } catch {}
+  return $false
+}
+if (Get-Command Start-PxBridge -ErrorAction SilentlyContinue) {
+  Start-PxBridge
+  if (-not (Test-LocalPx)) { exit 1 }
+  exit 0
+}
+if (Test-LocalPx) {
+  Write-Host "px-bridge: already listening on :3128"
+  exit 0
+}
+$px = Get-Command px -ErrorAction SilentlyContinue
+if (-not $px) {
+  Write-Host "px-bridge: install px on Windows first (winget install genotrance.px)"
+  exit 1
+}
+Start-Process -FilePath $px.Source -ArgumentList "--gateway=1","--hostonly=0","--port=3128","--allow=192.168.0.0/16,127.0.0.1" -WindowStyle Hidden
+Start-Sleep -Milliseconds 900
+if (Test-LocalPx) {
+  Write-Host "px-bridge: started on :3128 (gateway; WSL NAT OK)"
+  exit 0
+}
+Write-Host "px-bridge: start attempted; port not open yet"
+exit 1
+PSEOF
+
+# Translate WSL path for powershell.exe -File
+_win_ps1="$(wslpath -w "$_ps1")"
+powershell.exe -NoLogo -NonInteractive -ExecutionPolicy Bypass -File "$_win_ps1"
+
+rm -f "${TMPDIR:-/tmp}/.wsl-netmode.$(id -u 2>/dev/null || echo 0)" 2>/dev/null || true
+if [ -f "$HOME/.proxy.sh" ]; then
+  # shellcheck disable=SC1090
+  . "$HOME/.proxy.sh"
+  if typeset -f proxy_reset_cache >/dev/null 2>&1; then
+    proxy_reset_cache 2>/dev/null || true
+  fi
+  if typeset -f _proxy_auto >/dev/null 2>&1; then
+    _proxy_auto 2>/dev/null || true
+  fi
+  if typeset -f _proxy_info >/dev/null 2>&1; then
+    _proxy_info
+  fi
+fi
+{{-   end -}}
+{{- end -}}

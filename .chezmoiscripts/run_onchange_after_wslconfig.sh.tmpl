@@ -33,16 +33,20 @@ cat > "${dest}" <<'EOF'
 # 163.116.128.80:80, which is only routable from Windows and never from WSL,
 # so anything in WSL that honours the proxy env hangs until it times out
 # (Cursor server extension downloads, curl, MCP).
-# Proxy selection for WSL is handled per-shell by ~/.proxy.sh instead, which
-# probes direct first and only falls back to the corporate proxy when needed.
+# Proxy selection for WSL is handled per-shell by ~/.proxy.sh:
+# prefer Windows px on 127.0.0.1:3128 (NTLM) when running, else DIRECT,
+# else McAfee gateway (often 407 without Basic auth).
 autoProxy=false
 
-# Mirrored networking: WSL can reach Windows localhost (e.g. px on :3128).
+# Mirrored networking: WSL can reach Windows localhost (px on :3128).
 # Requires Windows 11 22H2+; apply with: wsl --shutdown
+# Start the bridge from WSL: px-bridge
+# Or Windows PowerShell: Start-PxBridge
 networkingMode=mirrored
 dnsTunneling=true
 EOF
 
 echo "wslconfig: wrote ${dest}"
+echo "wslconfig: from WSL start px with: px-bridge"
 {{-   end -}}
 {{- end -}}

@@ -1,0 +1,40 @@
+{{- if eq .chezmoi.os "windows" -}}
+# Install px (NTLM proxy bridge) for WSL mirrored networking → Tanium Trusted IPs.
+$ErrorActionPreference = 'Continue'
+Write-Host "Ensuring px-proxy (Windows NTLM bridge on 127.0.0.1:3128)..."
+
+function Refresh-SessionPath {
+  $env:Path = [System.Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' +
+              [System.Environment]::GetEnvironmentVariable('Path', 'User')
+}
+
+Refresh-SessionPath
+
+$px = Get-Command px -ErrorAction SilentlyContinue
+if (-not $px) {
+  $pip = Get-Command pip -ErrorAction SilentlyContinue
+  $py = Get-Command py -ErrorAction SilentlyContinue
+  $uv = Get-Command uv -ErrorAction SilentlyContinue
+  if ($uv) {
+    Write-Host "Installing px-proxy via uv tool..."
+    uv tool install px-proxy 2>$null
+  } elseif ($py) {
+    Write-Host "Installing px-proxy via py -m pip..."
+    py -m pip install --user px-proxy 2>$null
+  } elseif ($pip) {
+    Write-Host "Installing px-proxy via pip..."
+    pip install --user px-proxy 2>$null
+  } else {
+    Write-Host "warning: no uv/py/pip; install px-proxy manually (pip install px-proxy)"
+  }
+  Refresh-SessionPath
+  $px = Get-Command px -ErrorAction SilentlyContinue
+}
+
+if (-not $px) {
+  Write-Host "warning: px still not on PATH after install attempt"
+  exit 0
+}
+
+Write-Host "px found: $($px.Source)"
+{{- end -}}

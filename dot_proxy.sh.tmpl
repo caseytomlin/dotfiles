@@ -2,17 +2,59 @@
 # ~/.proxy.sh
 # WSL proxy setup (managed by chezmoi).
 #
-# Default is DIRECT: WSL reaches the internet through the Windows NAT, which
-# works both on and off the corporate VPN. The corporate egress proxy
-# (10.185.190.10:8080) is only reachable from the physical office LAN, so we
-# only use it when a direct connection is NOT possible (auto mode) or when
-# requested explicitly via `proxy-on`.
+# Priority when choosing an egress path:
+#   1) Windows px on :3128 (NTLM via Windows login)
+#      - Mirrored networking: 127.0.0.1:3128
+#      - NAT fallback: <Windows host / default gateway>:3128 (needs firewall allow)
+#      → Netskope / Bayer egress (needed for Tanium Trusted IP tokens)
+#   2) DIRECT home/ISP NAT (when px is not reachable)
+#   3) McAfee gateway 10.185.190.10:8080 (Basic via ~/.ssh/password; else 407 NTLM)
+#
+# Commands:
+#   proxy-corp / proxy-on  — force corp path (px preferred)
+#   proxy-off              — clear proxies (direct)
+#   proxy-info             — show current mode + whether px is up
+#   proxy-recheck          — drop cache and re-probe
+#
+# Optional: export ACDC_FORCE_CORP_PROXY=1 before sourcing to skip DIRECT
+# even when the internet works without a proxy.
 
-_PROXY_HOST="10.185.190.10:8080"
+_PX_PORT="3128"
+_PX_HOST=""   # set by _proxy_resolve_px (host:port)
+_CORP_HOST="10.185.190.10:8080"
 _PROXY_PROBE_URL="https://marketplace.cursorapi.com"
 _PROXY_CACHE="${TMPDIR:-/tmp}/.wsl-netmode.$(id -u 2>/dev/null || echo 0)"
 
-_proxy_url() {
+_proxy_tcp_open() {
+  local host="$1" port="$2"
+  if command -v nc >/dev/null 2>&1; then
+    nc -z -w 1 "$host" "$port" >/dev/null 2>&1
+    return $?
+  fi
+  (echo >/dev/tcp/"$host"/"$port") >/dev/null 2>&1
+}
+
+# Prefer localhost (mirrored); else Windows host IP from default route (NAT).
+_proxy_resolve_px() {
+  if _proxy_tcp_open 127.0.0.1 "$_PX_PORT"; then
+    _PX_HOST="127.0.0.1:$_PX_PORT"
+    return 0
+  fi
+  local gw
+  gw="$(ip route 2>/dev/null | awk '/^default/{print $3; exit}')"
+  if [ -n "$gw" ] && _proxy_tcp_open "$gw" "$_PX_PORT"; then
+    _PX_HOST="$gw:$_PX_PORT"
+    return 0
+  fi
+  _PX_HOST="127.0.0.1:$_PX_PORT"
+  return 1
+}
+
+_proxy_px_url() {
+  printf 'http://%s' "${_PX_HOST:-127.0.0.1:$_PX_PORT}"
+}
+
+_proxy_corp_gw_url() {
   local user pw
   user="${USER:-$(id -un 2>/dev/null)}"
   pw=""
@@ -20,16 +62,26 @@ _proxy_url() {
     pw="$(cat "$HOME/.ssh/password" 2>/dev/null)"
   fi
   if [ -n "$pw" ]; then
-    printf 'http://%s:%s@%s' "$user" "$pw" "$_PROXY_HOST"
+    printf 'http://%s:%s@%s' "$user" "$pw" "$_CORP_HOST"
   else
-    printf 'http://%s' "$_PROXY_HOST"
+    printf 'http://%s' "$_CORP_HOST"
+  fi
+}
+
+# Preferred corp URL: Windows px (NTLM) then gateway.
+_proxy_url() {
+  if _proxy_resolve_px; then
+    _proxy_px_url
+  else
+    _proxy_corp_gw_url
   fi
 }
 
 _proxy_apply() {
   local u="$1"
   export http_proxy="$u" https_proxy="$u" HTTP_PROXY="$u" HTTPS_PROXY="$u"
-  export no_proxy="localhost,127.0.0.1,::1,.cnb,.bayer.cnb,.bayer.biz"
+  export all_proxy="$u" ALL_PROXY="$u"
+  export no_proxy="localhost,127.0.0.1,::1,.cnb,.bayer.cnb,.bayer.biz,.bayer.de"
   export NO_PROXY="$no_proxy"
 }
 
@@ -39,24 +91,51 @@ _proxy_clear() {
 }
 
 _proxy_info() {
+  local mode="<direct>" px_up=0
+  if _proxy_resolve_px; then
+    px_up=1
+  fi
+  case "${https_proxy:-}" in
+    *:"$_PX_PORT"*) mode="px (${_PX_HOST})" ;;
+    *10.185.190.10:8080*) mode="corp-gw ($_CORP_HOST)" ;;
+    http*|HTTP*) mode="custom" ;;
+  esac
+  printf 'mode=%s\n' "$mode"
   printf 'http_proxy=%s\n'  "${http_proxy:-<direct>}"
   printf 'https_proxy=%s\n' "${https_proxy:-<direct>}"
+  if [ "$px_up" -eq 1 ]; then
+    printf 'px_bridge=up (%s)\n' "$_PX_HOST"
+  else
+    printf 'px_bridge=down (mirrored: wsl --shutdown then px-bridge; NAT: admin firewall TCP %s + px on 0.0.0.0)\n' "$_PX_PORT"
+  fi
 }
 
-# Manual overrides.
-setproxy()   { _proxy_apply "$(_proxy_url)"; echo "proxy: on ($_PROXY_HOST)"; }
+setproxy() {
+  local u
+  u="$(_proxy_url)"
+  if ! _proxy_resolve_px; then
+    echo "proxy: WARNING — Windows px not reachable on :$_PX_PORT (localhost or host gateway)" >&2
+    echo "proxy: falling back to $_CORP_HOST (needs Basic auth or will 407 NTLM)" >&2
+  fi
+  _proxy_apply "$u"
+  echo "proxy: on ($u)"
+}
 unsetproxy() { _proxy_clear; echo "proxy: off (direct)"; }
 proxy_reset_cache() { rm -f "$_PROXY_CACHE" 2>/dev/null || true; }
+
 alias proxy-on=setproxy
+alias proxy-corp=setproxy
 alias proxy-off=unsetproxy
 alias proxy-info=_proxy_info
 alias proxy-recheck='proxy_reset_cache; _proxy_auto'
 
-# Auto: prefer DIRECT; fall back to the corp proxy only if direct is blocked
-# but the proxy is reachable. Cached briefly so shells start fast.
+# Auto (cached ~5 min):
+#   px up → use px (stable Bayer/Netskope egress for Tanium Trusted IPs)
+#   else DIRECT if it works
+#   else corp gateway
+#   else DIRECT
+# ACDC_FORCE_CORP_PROXY=1 skips DIRECT even when the open internet works.
 _proxy_auto() {
-  # Start clean so any inherited (Windows host-injected) proxy vars do not
-  # leak into WSL tooling.
   _proxy_clear
 
   local now ts mode
@@ -65,27 +144,45 @@ _proxy_auto() {
   if [ -r "$_PROXY_CACHE" ]; then
     read -r ts mode 2>/dev/null < "$_PROXY_CACHE" || true
     if [ -n "${ts:-}" ] && [ -n "${mode:-}" ] && [ $((now - ts)) -lt 300 ]; then
-      [ "$mode" = proxy ] && _proxy_apply "$(_proxy_url)"
-      return 0
+      case "$mode" in
+        px)
+          if _proxy_resolve_px; then
+            _proxy_apply "$(_proxy_px_url)"
+            return 0
+          fi
+          ;;
+        proxy) _proxy_apply "$(_proxy_corp_gw_url)" ; return 0 ;;
+      esac
+      mode=""
     fi
     mode=""
   fi
 
-  if ! command -v curl >/dev/null 2>&1; then
-    mode=direct
-  else
-    if env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY \
-         curl -s -o /dev/null --max-time 2 "$_PROXY_PROBE_URL" >/dev/null 2>&1; then
-      mode=direct
-    elif curl -s -o /dev/null --max-time 2 -x "http://$_PROXY_HOST" "$_PROXY_PROBE_URL" >/dev/null 2>&1; then
-      mode=proxy
+  if [ "${ACDC_FORCE_CORP_PROXY:-0}" = "1" ]; then
+    if _proxy_resolve_px; then
+      mode=px
     else
-      mode=direct
+      mode=proxy
     fi
+  elif _proxy_resolve_px; then
+    # Bridge present → prefer corp egress (Tanium allowlist / Netskope).
+    mode=px
+  elif ! command -v curl >/dev/null 2>&1; then
+    mode=direct
+  elif env -u http_proxy -u https_proxy -u HTTP_PROXY -u HTTPS_PROXY \
+       curl -s -o /dev/null --max-time 2 "$_PROXY_PROBE_URL" >/dev/null 2>&1; then
+    mode=direct
+  elif curl -s -o /dev/null --max-time 2 -x "http://$_CORP_HOST" "$_PROXY_PROBE_URL" >/dev/null 2>&1; then
+    mode=proxy
+  else
+    mode=direct
   fi
 
   printf '%s %s\n' "$now" "$mode" > "$_PROXY_CACHE" 2>/dev/null || true
-  [ "$mode" = proxy ] && _proxy_apply "$(_proxy_url)"
+  case "$mode" in
+    px) _proxy_apply "$(_proxy_px_url)" ;;
+    proxy) _proxy_apply "$(_proxy_corp_gw_url)" ;;
+  esac
   return 0
 }
 

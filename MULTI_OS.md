@@ -22,6 +22,33 @@ Apply this repo with chezmoi on **each** environment (Windows native, WSL, nativ
 | Git remote / SSH helper | Same split: `.sh.tmpl` on Linux, `.ps1.tmpl` on Windows |
 | zsh plugins / vscode-remote MCP | Linux-only scripts (empty template ⇒ skipped) |
 | `%USERPROFILE%\.wslconfig` | WSL-only `run_onchange_after_*` script writing the **Windows host** file (outside WSL dest); keeps `autoProxy=false` + mirrored networking |
+| Windows `px` bridge | `run_once_install-px.ps1` + `Start-PxBridge` in PowerShell profile; WSL helper `~/.local/bin/px-bridge`. `~/.proxy.sh` prefers `:3128` (localhost if mirrored, else default-gateway) for Tanium Trusted IPs |
+
+### Activate WSL → px (Tanium Trusted IPs)
+
+`.wslconfig` alone does nothing until WSL is fully restarted. Prefer mirrored:
+
+```powershell
+# From elevated OR normal Windows PowerShell (closes all WSL distros):
+wsl --shutdown
+# Reopen WSL / Cursor, then in WSL:
+px-bridge
+proxy-recheck
+proxy-info
+curl -sS https://api.ipify.org   # want Netskope/Bayer, not home ISP
+```
+
+If you must stay on NAT (`eth0` is `192.168.x`):
+
+1. `Start-PxBridge` uses `--gateway=1 --hostonly=0 --allow=192.168.0.0/16,127.0.0.1`
+   (`hostonly=1` rejects WSL NAT client IPs → CONNECT abort).
+2. **Elevated** Windows PowerShell (admin):
+
+```powershell
+New-NetFirewallRule -DisplayName "WSL px bridge 3128" -Direction Inbound -Protocol TCP -LocalPort 3128 -Action Allow -Profile Any
+```
+
+3. In WSL, `proxy-recheck` should pick `<gateway>:3128`.
 
 ## WSL detection (templates)
 
