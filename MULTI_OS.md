@@ -22,7 +22,7 @@ Apply this repo with chezmoi on **each** environment (Windows native, WSL, nativ
 | Git remote / SSH helper | Same split: `.sh.tmpl` on Linux, `.ps1.tmpl` on Windows |
 | zsh plugins / vscode-remote MCP | Linux-only scripts (empty template ⇒ skipped) |
 | `%USERPROFILE%\.wslconfig` | WSL-only `run_onchange_after_*` script writing the **Windows host** file (outside WSL dest); keeps `autoProxy=false` + mirrored networking |
-| Windows `px` bridge | `run_once_install-px.ps1` + `Start-PxBridge` in PowerShell profile; WSL helper `~/.local/bin/px-bridge`. `~/.proxy.sh` prefers `:3128` (localhost if mirrored, else default-gateway) for Tanium Trusted IPs |
+| Windows `px` bridge | `run_once_install-px.ps1` + `Start-PxBridge` in PowerShell profile; WSL helper `~/.local/bin/px-bridge`. `~/.proxy.sh` prefers `:3128` (localhost if mirrored, else default-gateway). **Mode A:** empty `px.ini` `server=` (Netskope like browser). Do not pin McAfee `10.185.190.10:8080` for Tanium. |
 
 ### Activate WSL → px (Tanium Trusted IPs)
 
@@ -35,13 +35,17 @@ wsl --shutdown
 px-bridge
 proxy-recheck
 proxy-info
-curl -sS https://api.ipify.org   # want Netskope/Bayer, not home ISP
+# Same public IP as Windows (Netskope), not home ISP:
+curl -sS https://api.ipify.org
+# Full check:
+#   cd <acdc-repo> && uv run python tools/acdc_tanium_netcheck.py
 ```
 
 If you must stay on NAT (`eth0` is `192.168.x`):
 
 1. `Start-PxBridge` uses `--gateway=1 --hostonly=0 --allow=192.168.0.0/16,127.0.0.1`
-   (`hostonly=1` rejects WSL NAT client IPs → CONNECT abort).
+   (`hostonly=1` rejects WSL NAT client IPs → CONNECT abort). It also clears a
+   non-empty `px.ini` `server=` (Mode A) so McAfee is not used for Tanium.
 2. **Elevated** Windows PowerShell (admin):
 
 ```powershell
