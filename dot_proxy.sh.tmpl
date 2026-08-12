@@ -90,6 +90,16 @@ _proxy_clear() {
         HTTP_PROXY HTTPS_PROXY FTP_PROXY ALL_PROXY 2>/dev/null || true
 }
 
+# Never print Basic-auth userinfo (corp-gw fallback embeds ~/.ssh/password).
+_proxy_redact() {
+  local u="${1:-}"
+  case "$u" in
+    "") printf '<direct>' ;;
+    *://*:*@*) printf '%s' "${u%%://*}://***@${u#*@}" ;;
+    *) printf '%s' "$u" ;;
+  esac
+}
+
 _proxy_info() {
   local mode="<direct>" px_up=0
   if _proxy_resolve_px; then
@@ -101,8 +111,8 @@ _proxy_info() {
     http*|HTTP*) mode="custom" ;;
   esac
   printf 'mode=%s\n' "$mode"
-  printf 'http_proxy=%s\n'  "${http_proxy:-<direct>}"
-  printf 'https_proxy=%s\n' "${https_proxy:-<direct>}"
+  printf 'http_proxy=%s\n'  "$(_proxy_redact "${http_proxy:-}")"
+  printf 'https_proxy=%s\n' "$(_proxy_redact "${https_proxy:-}")"
   if [ "$px_up" -eq 1 ]; then
     printf 'px_bridge=up (%s)\n' "$_PX_HOST"
   else
@@ -118,7 +128,7 @@ setproxy() {
     echo "proxy: falling back to $_CORP_HOST (needs Basic auth or will 407 NTLM)" >&2
   fi
   _proxy_apply "$u"
-  echo "proxy: on ($u)"
+  echo "proxy: on ($(_proxy_redact "$u"))"
 }
 unsetproxy() { _proxy_clear; echo "proxy: off (direct)"; }
 proxy_reset_cache() { rm -f "$_PROXY_CACHE" 2>/dev/null || true; }

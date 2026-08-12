@@ -1,0 +1,40 @@
+---
+description: Edit chezmoi-managed dotfiles only via chezmoi; push verified changes to the personal dotfiles repo.
+alwaysApply: true
+---
+
+# Chezmoi-managed personal dotfiles
+
+Personal machine config (not ACDC) is owned by **chezmoi** → GitHub `caseytomlin/dotfiles`.
+
+## Never edit live targets directly
+
+Do **not** hand-edit files that chezmoi manages (examples):
+
+- `~/.proxy.sh`
+- `~/.zshrc`
+- `~/.local/bin/px-bridge`
+- `~/.cursor/skills/**` and `~/.cursor/rules/**` that live in the chezmoi source
+- Other paths under `chezmoi managed`
+
+If unsure: `chezmoi managed <path>` or `chezmoi source-path <path>`.
+
+## Required edit workflow
+
+1. Edit the **source** under `$(chezmoi source-path)` (e.g. `dot_proxy.sh.tmpl`), or `chezmoi edit <target>`.
+2. Apply: `chezmoi apply <target>` (or `chezmoi apply`).
+3. Verify the behavior (e.g. `proxy-info` must not print credentials; `chezmoi diff` clean for that path).
+4. Commit **and push** from the chezmoi source repo (do not leave verified fixes local-only):
+
+```bash
+cd "$(chezmoi source-path)"
+git status -sb
+git add <paths>
+git commit -m "…"
+git push origin HEAD
+# or: chezmoi git add … && chezmoi git commit … && chezmoi git push
+```
+
+## Personal agent instructions also live in dotfiles
+
+Standing personal rules for agents (this file and siblings under `~/.cursor/rules/`) are **chezmoi-managed**. When the human asks to remember a personal preference forever, update the chezmoi source (`dot_cursor/rules/…`), `chezmoi apply`, then commit and push — do **not** put it only in an ACDC repo rule or only in chat.

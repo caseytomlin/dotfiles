@@ -62,6 +62,16 @@ New-NetFirewallRule -DisplayName "WSL px bridge 3128" -Direction Inbound -Protoc
 
 Never read `.chezmoi.kernel.*` unguarded on Windows (`missingkey=error`).
 
+## Agent edits (required)
+
+Chezmoi is the only write path for managed targets. Agents must:
+
+1. Edit source (`dot_*.tmpl` / `dot_cursor/…`), never the live file under `$HOME`.
+2. `chezmoi apply` the target and verify.
+3. Commit **and push** to `origin` on this repo once verified (`chezmoi git …` or plain git in `$(chezmoi source-path)`).
+
+Personal always-on Cursor rule: `~/.cursor/rules/chezmoi-dotfiles.mdc` (source: `dot_cursor/rules/chezmoi-dotfiles.mdc`).
+
 ## Bootstrap
 
 ```bash
