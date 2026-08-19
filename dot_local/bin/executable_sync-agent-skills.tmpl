@@ -2,6 +2,23 @@
 
 set -euo pipefail
 
+init_nvm() {
+    if [ -s "${HOME}/.nvm/nvm.sh" ]; then
+        export NVM_DIR="${HOME}/.nvm"
+    elif [ -s "/usr/local/share/nvm/nvm.sh" ]; then
+        export NVM_DIR="/usr/local/share/nvm"
+    else
+        return 1
+    fi
+
+    # shellcheck disable=SC1090
+    . "${NVM_DIR}/nvm.sh"
+    nvm use --delete-prefix --silent default >/dev/null 2>&1 || true
+}
+
+init_nvm || true
+hash -r
+
 MANIFEST="${HOME}/.config/agent-skills/sources.json"
 CACHE_ROOT="${XDG_CACHE_HOME:-${HOME}/.cache}/agent-skill-sources"
 
@@ -121,7 +138,7 @@ install_npx_skills() {
 
     node_major="$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)"
     if [ "${node_major:-0}" -lt 22 ]; then
-        warn "node ${node_major} is too old for the current skills installer; rerun bootstrap to refresh node"
+        warn "node $(node -v 2>/dev/null || echo unknown) is too old for the current skills installer; use nvm default >= 22"
         return 0
     fi
 
