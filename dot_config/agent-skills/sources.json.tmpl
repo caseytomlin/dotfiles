@@ -1,0 +1,49 @@
+{
+  "sources": [
+    {
+      "id": "mattpocock-skills",
+      "description": "Install the mattpocock skill pack via the existing npx-based installer.",
+      "npxSkills": {
+        "repo": "mattpocock/skills",
+        "args": ["-g", "--all", "-y"]
+      }
+    },
+    {
+      "id": "learning-opportunities",
+      "description": "Install Dr. Cat Hicks' learning-opportunities skills globally without vendoring SKILL.md files into dotfiles.",
+      "gitMirror": {
+        "repo": "https://github.com/DrCatHicks/learning-opportunities.git",
+        "skills": [
+          {
+            "source": "learning-opportunities/skills/learning-opportunities",
+            "targets": [
+              "/home/gmmko/.agents/skills",
+              "/home/gmmko/.claude/skills",
+              "/home/gmmko/.copilot/skills",
+              "/home/gmmko/.cursor/skills"
+            ]
+          },
+          {
+            "source": "orient/skills/orient",
+            "targets": [
+              "/home/gmmko/.agents/skills",
+              "/home/gmmko/.claude/skills",
+              "/home/gmmko/.copilot/skills",
+              "/home/gmmko/.cursor/skills"
+            ]
+          }
+        ]
+      },
+      "claudeMarketplace": {
+        "source": "https://github.com/DrCatHicks/learning-opportunities.git",
+        "marketplace": "learning-opportunities",
+        "scope": "user",
+        "plugins": [
+          "learning-opportunities",
+          "learning-opportunities-auto",
+          "orient"
+        ]
+      }
+    }
+  ]
+}

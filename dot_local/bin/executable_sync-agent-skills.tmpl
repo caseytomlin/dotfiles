@@ -1,0 +1,185 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+MANIFEST="${HOME}/.config/agent-skills/sources.json"
+CACHE_ROOT="${XDG_CACHE_HOME:-${HOME}/.cache}/agent-skill-sources"
+
+log() {
+    printf '%s\n' "$*" >&2
+}
+
+warn() {
+    printf 'warning: %s\n' "$*" >&2
+}
+
+expand_home() {
+    if [ "$1" = "~" ]; then
+        printf '%s\n' "$HOME"
+        return 0
+    fi
+
+    if [ "${1#~/}" != "$1" ]; then
+        printf '%s/%s\n' "$HOME" "${1#~/}"
+        return 0
+    fi
+
+    printf '%s\n' "$1"
+}
+
+sync_directory() {
+    local source_dir="$1"
+    local target_root="$2"
+    local skill_name target_dir
+
+    skill_name="$(basename "$source_dir")"
+    target_root="$(expand_home "$target_root")"
+    target_dir="${target_root}/${skill_name}"
+
+    if [ ! -d "$source_dir" ]; then
+        warn "source skill directory missing: ${source_dir}"
+        return 1
+    fi
+
+    mkdir -p "$target_root"
+    rm -rf "$target_dir"
+    cp -R "$source_dir" "$target_dir"
+    log "Synced ${skill_name} -> ${target_root}"
+}
+
+ensure_git_cache() {
+    local source_id="$1"
+    local repo_url="$2"
+    local cache_dir="${CACHE_ROOT}/${source_id}"
+
+    mkdir -p "$CACHE_ROOT"
+
+    if [ ! -d "${cache_dir}/.git" ]; then
+        if ! git clone --depth 1 "$repo_url" "$cache_dir"; then
+            warn "failed to clone ${repo_url} into ${cache_dir}"
+            return 1
+        fi
+        log "Cloned ${repo_url} into ${cache_dir}"
+        printf '%s\n' "$cache_dir"
+        return 0
+    fi
+
+    if ! git -C "$cache_dir" remote set-url origin "$repo_url"; then
+        warn "failed to set origin for ${cache_dir}"
+        return 1
+    fi
+
+    if ! git -C "$cache_dir" pull --ff-only --quiet; then
+        warn "failed to update ${cache_dir}; using cached copy"
+    else
+        log "Updated cache ${cache_dir}"
+    fi
+
+    printf '%s\n' "$cache_dir"
+}
+
+install_claude_marketplace() {
+    local source_json="$1"
+    local marketplace_source marketplace_name scope
+
+    if ! command -v claude >/dev/null 2>&1; then
+        warn "claude CLI not available; skipping Claude marketplace install"
+        return 0
+    fi
+
+    marketplace_source="$(jq -r '.claudeMarketplace.source' <<<"$source_json")"
+    marketplace_name="$(jq -r '.claudeMarketplace.marketplace' <<<"$source_json")"
+    scope="$(jq -r '.claudeMarketplace.scope // "user"' <<<"$source_json")"
+
+    if ! claude plugin marketplace add "$marketplace_source" --scope "$scope"; then
+        warn "failed to add Claude marketplace ${marketplace_source}"
+    fi
+
+    while IFS= read -r plugin_name; do
+        [ -n "$plugin_name" ] || continue
+        if ! claude plugin install "${plugin_name}@${marketplace_name}" --scope "$scope"; then
+            warn "failed to install Claude plugin ${plugin_name}@${marketplace_name}"
+            continue
+        fi
+        log "Installed Claude plugin ${plugin_name}@${marketplace_name}"
+    done < <(jq -r '.claudeMarketplace.plugins[]' <<<"$source_json")
+}
+
+install_npx_skills() {
+    local source_json="$1"
+    local repo node_major
+
+    if ! command -v npx >/dev/null 2>&1; then
+        warn "npx not available; skipping npx-based skill install"
+        return 0
+    fi
+
+    if ! command -v node >/dev/null 2>&1; then
+        warn "node not available; skipping npx-based skill install"
+        return 0
+    fi
+
+    node_major="$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)"
+    if [ "${node_major:-0}" -lt 22 ]; then
+        warn "node ${node_major} is too old for the current skills installer; rerun bootstrap to refresh node"
+        return 0
+    fi
+
+    repo="$(jq -r '.npxSkills.repo' <<<"$source_json")"
+
+    mapfile -t args < <(jq -r '.npxSkills.args[]?' <<<"$source_json")
+
+    if ! npx --yes skills add "$repo" "${args[@]}"; then
+        warn "failed to install skills from ${repo} via npx"
+        return 1
+    fi
+
+    log "Installed npx skills from ${repo}"
+}
+
+mirror_git_skills() {
+    local source_json="$1"
+    local source_id repo_url cache_dir
+
+    source_id="$(jq -r '.id' <<<"$source_json")"
+    repo_url="$(jq -r '.gitMirror.repo' <<<"$source_json")"
+
+    cache_dir="$(ensure_git_cache "$source_id" "$repo_url")" || return 1
+
+    while IFS= read -r skill_json; do
+        local source_rel source_dir
+        source_rel="$(jq -r '.source' <<<"$skill_json")"
+        source_dir="${cache_dir}/${source_rel}"
+
+        while IFS= read -r target_root; do
+            sync_directory "$source_dir" "$target_root" || true
+        done < <(jq -r '.targets[]' <<<"$skill_json")
+    done < <(jq -c '.gitMirror.skills[]' <<<"$source_json")
+}
+
+if [ ! -f "$MANIFEST" ]; then
+    warn "manifest not found at ${MANIFEST}; skipping"
+    exit 0
+fi
+
+if ! command -v jq >/dev/null 2>&1; then
+    warn "jq not available; cannot read ${MANIFEST}"
+    exit 0
+fi
+
+while IFS= read -r source_json; do
+    source_id="$(jq -r '.id' <<<"$source_json")"
+    log "Syncing external skill source: ${source_id}"
+
+    if jq -e '.npxSkills' >/dev/null <<<"$source_json"; then
+        install_npx_skills "$source_json" || true
+    fi
+
+    if jq -e '.gitMirror' >/dev/null <<<"$source_json"; then
+        mirror_git_skills "$source_json" || true
+    fi
+
+    if jq -e '.claudeMarketplace' >/dev/null <<<"$source_json"; then
+        install_claude_marketplace "$source_json" || true
+    fi
+done < <(jq -c '.sources[]' "$MANIFEST")

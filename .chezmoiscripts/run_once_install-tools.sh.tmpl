@@ -226,10 +226,10 @@ else
     echo "MGA_API_KEY not set - skipping claude-code-router model refresh"
 fi
 
-if command -v npx >/dev/null 2>&1; then
-    echo "Installing agent skills (mattpocock/skills)..."
-    npx --yes skills add mattpocock/skills -g --all -y
+if command -v sync-agent-skills >/dev/null 2>&1; then
+    echo "Syncing external agent skills..."
+    bash "$(command -v sync-agent-skills)"
 else
-    echo "warning: npx not available; skipping agent skills install"
+    echo "warning: sync-agent-skills not available; skipping external skill sync"
 fi
 {{- end -}}

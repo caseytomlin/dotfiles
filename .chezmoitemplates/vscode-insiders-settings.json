@@ -43,6 +43,13 @@
 
   "chat.mcp.autostart": "newAndOutdated",
   "chat.agent.maxRequests": 999,
+  "chat.useAgentSkills": true,
+  "chat.agentSkillsLocations": {
+    "~/.agents/skills": true,
+    "~/.claude/skills": true,
+    "~/.copilot/skills": true,
+    "~/.cursor/skills": true
+  },
   "chat.tools.terminal.outputLocation": "chat",
   "chat.viewSessions.orientation": "stacked",
   "chat.mcp.serverSampling": {

@@ -1,0 +1,11 @@
+{{- if eq .chezmoi.os "linux" -}}
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if command -v sync-agent-skills >/dev/null 2>&1; then
+    bash "$(command -v sync-agent-skills)"
+else
+    echo "warning: sync-agent-skills is not available yet; skipping external skill sync" >&2
+fi
+{{- end -}}
