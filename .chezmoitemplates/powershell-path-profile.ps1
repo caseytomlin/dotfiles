@@ -4,6 +4,19 @@
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" +
             [System.Environment]::GetEnvironmentVariable("Path", "User")
 
+# WinGet / MSI installs sometimes land before User PATH is updated (node, git, ...).
+foreach ($p in @(
+    "$env:ProgramFiles\nodejs",
+    "${env:ProgramFiles(x86)}\nodejs",
+    "$env:LOCALAPPDATA\Programs\nodejs",
+    "$env:ProgramFiles\Git\cmd",
+    "$env:LOCALAPPDATA\Programs\Git\cmd"
+  )) {
+  if ((Test-Path -LiteralPath $p) -and ($env:Path.Split(';') -notcontains $p)) {
+    $env:Path = "$p;$env:Path"
+  }
+}
+
 # NTLM proxy bridge for WSL -> Tanium Trusted IP egress (Netskope / Bayer).
 # Mode A (default): empty upstream so Windows/Netskope dials like the browser.
 # Prefer WSL mirrored networking (127.0.0.1). Bind 0.0.0.0 so NAT + host firewall

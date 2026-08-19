@@ -2,6 +2,31 @@
 {{- if eq .chezmoi.os "windows" -}}
 $ErrorActionPreference = 'Stop'
 
+function Ensure-UserPathContains {
+  param([Parameter(Mandatory = $true)][string[]]$Directories)
+  $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+  $parts = @($userPath -split ';' | Where-Object { $_ })
+  $changed = $false
+  foreach ($dir in $Directories) {
+    if ((Test-Path -LiteralPath $dir) -and ($parts -notcontains $dir)) {
+      $parts = @($dir) + $parts
+      $changed = $true
+      Write-Host "Added to User PATH: $dir"
+    }
+  }
+  if ($changed) {
+    [Environment]::SetEnvironmentVariable('Path', ($parts -join ';'), 'User')
+  }
+}
+
+Ensure-UserPathContains @(
+  "$env:ProgramFiles\nodejs",
+  "${env:ProgramFiles(x86)}\nodejs",
+  "$env:LOCALAPPDATA\Programs\nodejs",
+  "$env:ProgramFiles\Git\cmd",
+  "$env:LOCALAPPDATA\Programs\Git\cmd"
+)
+
 $profileBody = @'
 {{ includeTemplate "powershell-path-profile.ps1" . | trim }}
 '@
