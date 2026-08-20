@@ -34,3 +34,22 @@
 	gpgsign = false
 [push]
 	autoSetupRemote = true
+[alias]
+	# Curated Oh My Zsh git-plugin shortcuts (shared across zsh + PowerShell)
+	ga = add
+	gaa = add --all
+	gb = branch
+	gc = commit
+	gca = commit -a
+	gcam = commit -a -m
+	gco = checkout
+	gcb = checkout -b
+	gcm = !git checkout main 2>/dev/null || git checkout master
+	gd = diff
+	gds = diff --staged
+	gf = fetch
+	gl = pull
+	gp = push
+	gst = status
+	gss = status -s
+	glog = log --oneline --decorate --graph

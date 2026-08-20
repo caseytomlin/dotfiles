@@ -83,3 +83,87 @@ function Start-PxBridge {
 }
 
 Set-Alias -Name px-bridge -Value Start-PxBridge
+
+# --- Shell UX (zsh parity: Starship, PSReadLine, aliases, Atuin) ---
+
+$env:EDITOR = 'code --wait'
+
+if (Get-Module -ListAvailable -Name PSReadLine) {
+  Import-Module PSReadLine -ErrorAction SilentlyContinue
+  Set-PSReadLineOption -EditMode Emacs
+  try {
+    Set-PSReadLineOption -PredictionSource History
+    Set-PSReadLineOption -PredictionViewStyle ListView
+  } catch {}
+  try {
+    Set-PSReadLineOption -Colors @{
+      Command            = 'Cyan'
+      Parameter          = 'DarkCyan'
+      String             = 'Green'
+      Operator           = 'DarkGray'
+      Variable           = 'Yellow'
+      Comment            = 'DarkGreen'
+      Number             = 'White'
+      Member             = 'DarkYellow'
+      Type               = 'DarkCyan'
+      Keyword            = 'Magenta'
+      ContinuationPrompt = 'DarkGray'
+    }
+  } catch {}
+  try {
+    Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
+    Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward
+    Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
+  } catch {}
+}
+
+function cm {
+  & chezmoi @args
+}
+
+function va {
+  $candidates = @()
+  if ($env:UV_PROJECT_ENVIRONMENT) {
+    $candidates += $env:UV_PROJECT_ENVIRONMENT
+  }
+  $candidates += @('.venv', '.venv-devcontainer')
+
+  foreach ($v in $candidates) {
+    if (-not $v) { continue }
+    foreach ($rel in @('Scripts\Activate.ps1', 'bin\Activate.ps1')) {
+      $activate = Join-Path $v $rel
+      if (Test-Path -LiteralPath $activate) {
+        . $activate
+        return
+      }
+    }
+  }
+
+  Write-Error "va: no venv found (tried: $($candidates -join ', '))"
+}
+
+function vd {
+  if (Get-Command deactivate -ErrorAction SilentlyContinue) {
+    deactivate
+  } else {
+    Write-Error 'vd: no active venv (deactivate not defined)'
+  }
+}
+
+function disk {
+  Get-PSDrive -PSProvider FileSystem |
+    Where-Object { $null -ne $_.Used } |
+    Sort-Object -Property Used -Descending |
+    Select-Object -First 10 Name,
+      @{ Name = 'UsedGB'; Expression = { [math]::Round($_.Used / 1GB, 2) } },
+      @{ Name = 'FreeGB'; Expression = { [math]::Round($_.Free / 1GB, 2) } },
+      @{ Name = 'TotalGB'; Expression = { [math]::Round(($_.Used + $_.Free) / 1GB, 2) } }
+}
+
+if (Get-Command starship -ErrorAction SilentlyContinue) {
+  Invoke-Expression (& starship init powershell)
+}
+
+if (Get-Command atuin -ErrorAction SilentlyContinue) {
+  Invoke-Expression (& atuin init powershell | Out-String)
+}
