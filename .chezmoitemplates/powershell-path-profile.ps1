@@ -56,27 +56,84 @@ function Ensure-PxModeA {
   }
 }
 
-function Start-PxBridge {
-  if (Test-PxBridge) {
-    Write-Host "px-bridge: already listening on :3128"
-    return
+function Get-WslPxAllowList {
+  # Prefer the live vEthernet (WSL) prefix. Do not open all of RFC1918 just because
+  # px binds 0.0.0.0 and the firewall allows :3128.
+  $allows = New-Object System.Collections.Generic.List[string]
+  [void]$allows.Add('127.0.0.1')
+  try {
+    Get-NetIPAddress -AddressFamily IPv4 -ErrorAction Stop |
+      Where-Object {
+        $_.AddressState -eq 'Preferred' -and
+        $_.InterfaceAlias -match 'WSL|Hyper-V|vEthernet'
+      } |
+      ForEach-Object {
+        $addrBytes = ([System.Net.IPAddress]::Parse($_.IPAddress)).GetAddressBytes()
+        $prefix = [int]$_.PrefixLength
+        $maskBytes = New-Object byte[] 4
+        for ($i = 0; $i -lt 4; $i++) {
+          $bits = [Math]::Min([Math]::Max($prefix - ($i * 8), 0), 8)
+          if ($bits -eq 8) {
+            $maskBytes[$i] = 255
+          } elseif ($bits -le 0) {
+            $maskBytes[$i] = 0
+          } else {
+            $maskBytes[$i] = [byte](256 - [Math]::Pow(2, 8 - $bits))
+          }
+        }
+        $netBytes = New-Object byte[] 4
+        for ($i = 0; $i -lt 4; $i++) {
+          $netBytes[$i] = $addrBytes[$i] -band $maskBytes[$i]
+        }
+        $network = [System.Net.IPAddress]::new($netBytes).IPAddressToString
+        [void]$allows.Add("$network/$prefix")
+      }
+  } catch {}
+  if ($allows.Count -eq 1) {
+    # WSL adapter not up yet: cover common Hyper-V NAT ranges without 10/8.
+    [void]$allows.Add('172.16.0.0/12')
+    [void]$allows.Add('192.168.0.0/16')
   }
+  return (($allows | Select-Object -Unique) -join ',')
+}
+
+function Get-RunningPxCommandLine {
+  try {
+    $proc = Get-CimInstance Win32_Process -Filter "Name='px.exe'" -ErrorAction Stop |
+      Select-Object -First 1
+    if ($proc) { return [string]$proc.CommandLine }
+  } catch {}
+  return $null
+}
+
+function Start-PxBridge {
   $px = Get-Command px -ErrorAction SilentlyContinue
   if (-not $px) {
     Write-Host "px-bridge: 'px' not on PATH. Install: winget install genotrance.px   (or: pip install --user px-proxy)"
     return
   }
   Ensure-PxModeA
-  # gateway=1 binds all ifaces; hostonly=0 so WSL NAT guest IPs are allowed (not just host NICs).
-  # allow=192.168.0.0/16 covers Hyper-V NAT; firewall must still permit inbound TCP 3128.
+  $allow = Get-WslPxAllowList
+  $wantAllowArg = "--allow=$allow"
+  $runningCmd = Get-RunningPxCommandLine
+  if ((Test-PxBridge) -and $runningCmd -and ($runningCmd -like "*$wantAllowArg*")) {
+    Write-Host "px-bridge: already listening on :3128 with allow=$allow"
+    return
+  }
+  if ($runningCmd) {
+    Get-Process px -ErrorAction SilentlyContinue | Stop-Process -Force
+    Start-Sleep -Milliseconds 300
+  }
+  # gateway=1 binds all ifaces; hostonly=0 so WSL NAT guest IPs are allowed.
+  # Firewall must still permit inbound TCP 3128.
   # Do NOT pass --proxy=10.185... here (Mode B); that breaks Tanium off-VPN.
   Start-Process -FilePath $px.Source -ArgumentList @(
     '--gateway=1', '--hostonly=0', '--port=3128',
-    '--allow=192.168.0.0/16,127.0.0.1'
+    $wantAllowArg
   ) -WindowStyle Hidden
   Start-Sleep -Milliseconds 800
   if (Test-PxBridge) {
-    Write-Host "px-bridge: started on :3128 (Mode A; gateway; WSL NAT OK)"
+    Write-Host "px-bridge: started on :3128 (Mode A; allow=$allow)"
   } else {
     Write-Host "px-bridge: start attempted but port 3128 not open yet - check Task Manager for px"
   }

@@ -51,10 +51,11 @@ if (-not $px) {
   Write-Host "px-bridge: install px on Windows first (winget install genotrance.px)"
   exit 1
 }
-Start-Process -FilePath $px.Source -ArgumentList "--gateway=1","--hostonly=0","--port=3128","--allow=192.168.0.0/16,127.0.0.1" -WindowStyle Hidden
+# Fallback when Start-PxBridge is unavailable: cover Hyper-V NAT ranges without opening 10/8.
+Start-Process -FilePath $px.Source -ArgumentList "--gateway=1","--hostonly=0","--port=3128","--allow=172.16.0.0/12,192.168.0.0/16,127.0.0.1" -WindowStyle Hidden
 Start-Sleep -Milliseconds 900
 if (Test-LocalPx) {
-  Write-Host "px-bridge: started on :3128 (gateway; WSL NAT OK)"
+  Write-Host "px-bridge: started on :3128 (gateway; WSL NAT fallback allow)"
   exit 0
 }
 Write-Host "px-bridge: start attempted; port not open yet"

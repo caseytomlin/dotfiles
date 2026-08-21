@@ -43,9 +43,10 @@ curl -sS https://api.ipify.org
 #   cd <acdc-repo> && uv run python tools/acdc_tanium_netcheck.py
 ```
 
-If you must stay on NAT (`eth0` is `192.168.x`):
+If you must stay on NAT (`eth0` is `172.x` / `192.168.x`):
 
-1. `Start-PxBridge` uses `--gateway=1 --hostonly=0 --allow=192.168.0.0/16,127.0.0.1`
+1. `Start-PxBridge` uses `--gateway=1 --hostonly=0` and derives `--allow=` from the
+   live `vEthernet (WSL...)` prefix (fallback `172.16.0.0/12,192.168.0.0/16,127.0.0.1`).
    (`hostonly=1` rejects WSL NAT client IPs → CONNECT abort). It also clears a
    non-empty `px.ini` `server=` (Mode A) so McAfee is not used for Tanium.
 2. **Elevated** Windows PowerShell (admin):
