@@ -34,14 +34,15 @@ cat > "${dest}" <<'EOF'
 # so anything in WSL that honours the proxy env hangs until it times out
 # (Cursor server extension downloads, curl, MCP).
 # Proxy selection for WSL is handled per-shell by ~/.proxy.sh:
-# prefer Windows px on 127.0.0.1:3128 (NTLM) when running, else DIRECT,
-# else McAfee gateway (often 407 without Basic auth).
+# prefer Windows px (:3128, NTLM) when running, else DIRECT, else McAfee
+# (often 407 without Basic auth). On VPN, NAT'd WSL direct times out —
+# px is then the only working public path.
 autoProxy=false
 
-# Mirrored networking: WSL can reach Windows localhost (px on :3128).
+# Request mirrored networking so WSL can use 127.0.0.1:3128. Windows/VPN
+# often keep NAT anyway (eth0 is 172.x); then use the default-gateway:3128.
 # Requires Windows 11 22H2+; apply with: wsl --shutdown
-# Start the bridge from WSL: px-bridge
-# Or Windows PowerShell: Start-PxBridge
+# Start the bridge: Windows PowerShell auto-starts it; from WSL: px-bridge
 networkingMode=mirrored
 dnsTunneling=true
 EOF

@@ -23,17 +23,20 @@ Apply this repo with chezmoi on **each** environment (Windows native, WSL, nativ
 | PowerShell shell UX (Windows) | `run_onchange_after_powershell-path.ps1.tmpl` writes `profile.ps1` under **MyDocuments** (`WindowsPowerShell` + `PowerShell`). Body (`.chezmoitemplates/powershell-path-profile.ps1`): PATH rebuild for WSL-launched PS, `Start-PxBridge`, **Starship** init, **PSReadLine** predictions/colors, aliases `cm` / `va` / `vd` / `disk`, `$EDITOR`, guarded **Atuin** init. Winget bootstrap also installs Atuin (`Atuinsh.Atuin`). Shared `~/.config/starship.toml` + `~/.config/atuin` + git `[alias]` apply on both OSes. |
 | Git remote / SSH helper | Same split: `.sh.tmpl` on Linux, `.ps1.tmpl` on Windows |
 | zsh plugins / vscode-remote MCP | Linux-only scripts (empty template ⇒ skipped) |
-| `%USERPROFILE%\.wslconfig` | WSL-only `run_onchange_after_*` script writing the **Windows host** file (outside WSL dest); keeps `autoProxy=false` + mirrored networking |
-| Windows `px` bridge | `run_once_install-px.ps1` + `Start-PxBridge` in PowerShell profile; WSL helper `~/.local/bin/px-bridge`. `~/.proxy.sh` prefers `:3128` (localhost if mirrored, else default-gateway). **Mode A:** empty `px.ini` `server=` (Netskope like browser). Do not pin McAfee `10.185.190.10:8080` for Tanium. |
+| `%USERPROFILE%\.wslconfig` | WSL-only `run_onchange_after_*` script writing the **Windows host** file (outside WSL dest); `autoProxy=false` (required), `dnsTunneling=true`, and `networkingMode=mirrored` (best-effort — Windows/VPN often keep NAT anyway) |
+| Windows `px` bridge | `run_once_install-px.ps1` + quiet `Start-PxBridge` at the end of the PowerShell profile; WSL helper `~/.local/bin/px-bridge`. `~/.proxy.sh` prefers `:3128` (localhost if mirrored, else default-gateway). **Mode A:** empty `px.ini` `server=` (Netskope like browser). Do not pin McAfee `10.185.190.10:8080` for Tanium. |
 
 ### Activate WSL → px (Tanium Trusted IPs)
 
-`.wslconfig` alone does nothing until WSL is fully restarted. Prefer mirrored:
+`.wslconfig` is applied only after `wsl --shutdown`. `autoProxy=false` is the load-bearing setting. `networkingMode=mirrored` is requested so WSL can use `127.0.0.1:3128`, but **verify the effective mode** (`ip -br addr` in the guest). A `172.x` / `192.168.x` `eth0` means NAT; `127.0.0.1:3128` will stay closed.
+
+While Cisco VPN is up, NAT'd WSL **direct** HTTPS times out. Windows still works. The `px` bridge is then the only WSL path to the public internet (and the one with a corporate egress IP). Off VPN, direct also works; still prefer `px` for Tanium / IP allowlists.
 
 ```powershell
-# From elevated OR normal Windows PowerShell (closes all WSL distros):
+# Only if you changed .wslconfig (closes all WSL distros):
 wsl --shutdown
-# Reopen WSL / Cursor, then in WSL:
+# Reopen WSL / Cursor. Opening Windows PowerShell also starts px quietly.
+# From WSL:
 px-bridge
 proxy-recheck
 proxy-info
@@ -43,19 +46,26 @@ curl -sS https://api.ipify.org
 #   cd <acdc-repo> && uv run python tools/acdc_tanium_netcheck.py
 ```
 
-If you must stay on NAT (`eth0` is `172.x` / `192.168.x`):
+NAT (`eth0` is `172.x` / `192.168.x`) still needs:
 
-1. `Start-PxBridge` uses `--gateway=1 --hostonly=0` and derives `--allow=` from the
-   live `vEthernet (WSL...)` prefix (fallback `172.16.0.0/12,192.168.0.0/16,127.0.0.1`).
+1. `Start-PxBridge` (`--gateway=1 --hostonly=0`) derives `--allow=` from the live
+   `vEthernet (WSL...)` prefix (fallback `172.16.0.0/12,192.168.0.0/16,127.0.0.1`).
    (`hostonly=1` rejects WSL NAT client IPs → CONNECT abort). It also clears a
    non-empty `px.ini` `server=` (Mode A) so McAfee is not used for Tanium.
-2. **Elevated** Windows PowerShell (admin):
+   The PowerShell profile calls `Start-PxBridge -Quiet` so this survives reboot.
+2. **Elevated** Windows PowerShell (admin) — once per machine, plus after a
+   missing connected route isolates the guest (ping to the default gateway fails):
 
 ```powershell
 New-NetFirewallRule -DisplayName "WSL px bridge 3128" -Direction Inbound -Protocol TCP -LocalPort 3128 -Action Allow -Profile Any
+# Hyper-V firewall is separate from Windows Defender Firewall:
+Get-NetFirewallHyperVRule -ErrorAction SilentlyContinue |
+  Where-Object { $_.LocalPorts -contains 3128 }
+# If WSL cannot ping its gateway, persist the vEthernet connected prefix, e.g.:
+#   New-NetRoute -DestinationPrefix '172.22.64.0/20' -InterfaceAlias 'vEthernet (WSL (Hyper-V firewall))' -NextHop 0.0.0.0 -PolicyStore PersistentStore
 ```
 
-3. In WSL, `proxy-recheck` should pick `<gateway>:3128`.
+3. In WSL, `proxy-recheck` should pick `<gateway>:3128` (or `127.0.0.1:3128` if mirrored actually took effect).
 
 ## WSL detection (templates)
 

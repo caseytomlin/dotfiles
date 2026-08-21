@@ -107,9 +107,12 @@ function Get-RunningPxCommandLine {
 }
 
 function Start-PxBridge {
+  param([switch]$Quiet)
   $px = Get-Command px -ErrorAction SilentlyContinue
   if (-not $px) {
-    Write-Host "px-bridge: 'px' not on PATH. Install: winget install genotrance.px   (or: pip install --user px-proxy)"
+    if (-not $Quiet) {
+      Write-Host "px-bridge: 'px' not on PATH. Install: winget install genotrance.px   (or: pip install --user px-proxy)"
+    }
     return
   }
   Ensure-PxModeA
@@ -117,7 +120,9 @@ function Start-PxBridge {
   $wantAllowArg = "--allow=$allow"
   $runningCmd = Get-RunningPxCommandLine
   if ((Test-PxBridge) -and $runningCmd -and ($runningCmd -like "*$wantAllowArg*")) {
-    Write-Host "px-bridge: already listening on :3128 with allow=$allow"
+    if (-not $Quiet) {
+      Write-Host "px-bridge: already listening on :3128 with allow=$allow"
+    }
     return
   }
   if ($runningCmd) {
@@ -133,8 +138,10 @@ function Start-PxBridge {
   ) -WindowStyle Hidden
   Start-Sleep -Milliseconds 800
   if (Test-PxBridge) {
-    Write-Host "px-bridge: started on :3128 (Mode A; allow=$allow)"
-  } else {
+    if (-not $Quiet) {
+      Write-Host "px-bridge: started on :3128 (Mode A; allow=$allow)"
+    }
+  } elseif (-not $Quiet) {
     Write-Host "px-bridge: start attempted but port 3128 not open yet - check Task Manager for px"
   }
 }
@@ -249,3 +256,7 @@ if (Get-Command starship -ErrorAction SilentlyContinue) {
 if (Get-Command atuin -ErrorAction SilentlyContinue) {
   Invoke-Expression (& atuin init powershell | Out-String)
 }
+
+# After reboot, px only exists if something starts it. WSL NAT has no public
+# path while Cisco VPN is up, so keep the bridge alive from every PS session.
+Start-PxBridge -Quiet
