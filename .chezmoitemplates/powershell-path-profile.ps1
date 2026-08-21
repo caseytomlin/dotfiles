@@ -121,6 +121,31 @@ function cm {
   & chezmoi @args
 }
 
+# Oh My Zsh-style bare git shortcuts (gitconfig [alias] alone requires `git gst`).
+# Drop PS built-ins that collide with OMZ names (gc/gl/gp).
+foreach ($a in @('gc', 'gl', 'gp')) {
+  if (Test-Path -LiteralPath "Alias:$a") {
+    Remove-Item -LiteralPath "Alias:$a" -Force -ErrorAction SilentlyContinue
+  }
+}
+function ga { git ga @args }
+function gaa { git gaa @args }
+function gb { git gb @args }
+function gc { git gc @args }
+function gca { git gca @args }
+function gcam { git gcam @args }
+function gco { git gco @args }
+function gcb { git gcb @args }
+function gcm { git gcm @args }
+function gd { git gd @args }
+function gds { git gds @args }
+function gf { git gf @args }
+function gl { git gl @args }
+function gp { git gp @args }
+function gst { git gst @args }
+function gss { git gss @args }
+function glog { git glog @args }
+
 function va {
   $candidates = @()
   if ($env:UV_PROJECT_ENVIRONMENT) {
