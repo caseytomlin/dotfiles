@@ -48,24 +48,23 @@ curl -sS https://api.ipify.org
 
 NAT (`eth0` is `172.x` / `192.168.x`) still needs:
 
-1. `Start-PxBridge` (`--gateway=1 --hostonly=0`) derives `--allow=` from the live
-   `vEthernet (WSL...)` prefix (fallback `172.16.0.0/12,192.168.0.0/16,127.0.0.1`).
-   (`hostonly=1` rejects WSL NAT client IPs → CONNECT abort). It also clears a
-   non-empty `px.ini` `server=` (Mode A) so McAfee is not used for Tanium.
-   The PowerShell profile calls `Start-PxBridge -Quiet` so this survives reboot.
-2. **Elevated** Windows PowerShell (admin) — once per machine, plus after a
-   missing connected route isolates the guest (ping to the default gateway fails):
+1. **No admin — every login:** `Start-PxBridge` (`--gateway=1 --hostonly=0`) derives
+   `--allow=` from the live `vEthernet (WSL...)` prefix (fallback
+   `172.16.0.0/12,192.168.0.0/16,127.0.0.1`). The PowerShell profile calls it
+   `-Quiet`. Does not have to run before WSL. `~/.proxy.sh` then points at
+   `<gateway>:3128`. On WSL, GitHub is HTTPS through `px` (SSH `:22` times out
+   on VPN; `gh git_protocol` + git `insteadOf` are set accordingly).
+2. **Admin once per machine** (and again only if ping to the WSL gateway fails):
+   Hyper-V allow TCP 3128 + persist the **live** vEthernet connected prefix.
+   Unelevated login scripts cannot add Windows routes. Script:
+   `C:\Users\GMMKO\wsl-px-admin-once.ps1` (run elevated; start WSL first).
 
-```powershell
-New-NetFirewallRule -DisplayName "WSL px bridge 3128" -Direction Inbound -Protocol TCP -LocalPort 3128 -Action Allow -Profile Any
-# Hyper-V firewall is separate from Windows Defender Firewall:
-Get-NetFirewallHyperVRule -ErrorAction SilentlyContinue |
-  Where-Object { $_.LocalPorts -contains 3128 }
-# If WSL cannot ping its gateway, persist the vEthernet connected prefix, e.g.:
-#   New-NetRoute -DestinationPrefix '172.22.64.0/20' -InterfaceAlias 'vEthernet (WSL (Hyper-V firewall))' -NextHop 0.0.0.0 -PolicyStore PersistentStore
-```
+   Cisco Secure Client typically **blocks mirrored mode** (silent NAT fallback).
+   Do not treat `.wslconfig` `networkingMode=mirrored` as effective until
+   `ip -br addr` shows Windows IPs, not `172.x`.
 
-3. In WSL, `proxy-recheck` should pick `<gateway>:3128` (or `127.0.0.1:3128` if mirrored actually took effect).
+3. In WSL, `proxy-recheck` should pick `<gateway>:3128` (or `127.0.0.1:3128` if
+   mirrored actually took effect).
 
 ## WSL detection (templates)
 
