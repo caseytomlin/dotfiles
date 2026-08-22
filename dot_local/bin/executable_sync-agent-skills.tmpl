@@ -19,6 +19,25 @@ init_nvm() {
 init_nvm || true
 hash -r
 
+# npx skills / git clone honor git insteadOf and `gh` git_protocol. WSL on VPN
+# cannot open github.com:22, so force HTTPS and inherit px from ~/.proxy.sh.
+if [ -f "${HOME}/.proxy.sh" ]; then
+    # shellcheck disable=SC1091
+    . "${HOME}/.proxy.sh"
+fi
+
+github_https_over_proxy() {
+    git config --global --unset-all url.git@github.com:.insteadof 2>/dev/null || true
+    git config --global --unset-all url.https://github.com/.insteadof 2>/dev/null || true
+    git config --global --add url."https://github.com/".insteadOf "git@github.com:" 2>/dev/null || true
+    git config --global --add url."https://github.com/".insteadOf "ssh://git@github.com/" 2>/dev/null || true
+    if command -v gh >/dev/null 2>&1; then
+        gh config set git_protocol https >/dev/null 2>&1 || true
+    fi
+}
+github_https_over_proxy
+
+
 MANIFEST="${HOME}/.config/agent-skills/sources.json"
 CACHE_ROOT="${XDG_CACHE_HOME:-${HOME}/.cache}/agent-skill-sources"
 

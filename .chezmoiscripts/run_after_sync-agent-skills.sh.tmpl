@@ -3,6 +3,11 @@
 
 set -euo pipefail
 
+if [ -f "${HOME}/.proxy.sh" ]; then
+    # shellcheck disable=SC1091
+    . "${HOME}/.proxy.sh"
+fi
+
 if command -v sync-agent-skills >/dev/null 2>&1; then
     bash "$(command -v sync-agent-skills)"
 else

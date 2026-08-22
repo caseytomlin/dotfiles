@@ -6,12 +6,22 @@ set -eu
 SSH_DIR=$HOME/.ssh
 ID_RSA_FILENAME=$SSH_DIR/id_rsa
 
+is_wsl() {
+    grep -qi microsoft /proc/version 2>/dev/null \
+        || grep -qi microsoft /proc/sys/kernel/osrelease 2>/dev/null
+}
+
 prefer_github_ssh() {
     if [ "${PREFER_GITHUB_SSH:-}" = "yes" ]; then
         return 0
     fi
 
     if [ -f /.dockerenv ] || [ -n "${REMOTE_CONTAINERS:-}" ] || [ -n "${DEVCONTAINER:-}" ]; then
+        return 1
+    fi
+
+    # WSL NAT + Cisco VPN cannot reach github.com:22. HTTPS through px works.
+    if is_wsl; then
         return 1
     fi
 
@@ -24,6 +34,16 @@ prefer_github_ssh() {
     fi
 
     return 1
+}
+
+prefer_github_https() {
+    git config --global --unset-all url.git@github.com:.insteadof 2>/dev/null || true
+    git config --global --unset-all url.https://github.com/.insteadof 2>/dev/null || true
+    git config --global --add url."https://github.com/".insteadOf "git@github.com:"
+    git config --global --add url."https://github.com/".insteadOf "ssh://git@github.com/"
+    if command -v gh >/dev/null 2>&1; then
+        gh config set git_protocol https >/dev/null 2>&1 || true
+    fi
 }
 
 if [ -f "$ID_RSA_FILENAME" ]; then
@@ -46,7 +66,8 @@ if [ -z "${CODESPACES:-}" ]; then
         echo "Configuring git to prefer SSH for GitHub"
         git config --global url."git@github.com:".insteadOf "https://github.com/" || true
     else
-        echo "Skipping GitHub SSH rewrite; HTTPS remains the default"
+        echo "Configuring git to prefer HTTPS for GitHub (WSL/VPN cannot use :22)"
+        prefer_github_https || true
     fi
 fi
 
